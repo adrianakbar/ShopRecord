@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f6f8f6;
   --foreground: #171717;
 }
 
@@ -10,17 +10,86 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Custom colors */
+  --color-primary: #53d22d;
+  --color-primary-hover: #42a824;
+  --color-background-light: #f6f8f6;
+  --color-background-dark: #152012;
+  --color-surface-dark: #21301c;
+  --color-border-dark: #2e4328;
+  --color-text-muted: #a2c398;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #152012;
+    --foreground: #ffffff;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Manrope', sans-serif;
+}
+
+/* Hide scrollbar for cleaner UI */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #152012; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2e4328; 
+  border-radius: 10px;
+}
+
+/* Selection */
+::selection {
+  background: #53d22d;
+  color: #152012;
+}
+
+/* Custom scrollbar for textarea */
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: #2e4328; 
+  border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  background: #426039; 
+}
+
+/* Custom scrollbar for table */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #2e4328;
+  border-radius: 20px;
+}
+
+/* Date picker icon color fix for dark mode */
+::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
 }
