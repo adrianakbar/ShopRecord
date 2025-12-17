@@ -1,7 +1,7 @@
 'use client';
 
 interface NavigationProps {
-  currentPage?: 'dashboard' | 'quick-add' | 'reports' | 'settings';
+  currentPage?: 'dashboard' | 'quick-add' | 'reports' | 'settings' | 'review';
   variant?: 'default' | 'simple';
   showNotifications?: boolean;
 }
