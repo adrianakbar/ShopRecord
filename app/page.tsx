@@ -1,8 +1,71 @@
 'use client';
 
-import Image from "next/image";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+      const body = authMode === 'login' 
+        ? { email, password }
+        : { email, password, fullName };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Non-JSON response received:', await response.text());
+        setError('Server error: Respon tidak valid. Pastikan development server berjalan.');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Terjadi kesalahan');
+        return;
+      }
+
+      if (authMode === 'login') {
+        router.push('/quick-add');
+        router.refresh();
+      } else {
+        setSuccess(data.message);
+        setTimeout(() => {
+          setAuthMode('login');
+          setSuccess('');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setError('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden">
       {/* Top Navigation (Simplified for Login) */}
@@ -149,25 +212,85 @@ export default function Home() {
               {/* Toggle Switch */}
               <div className="mb-8 flex justify-center">
                 <div className="flex h-12 w-full max-w-[300px] items-center rounded-full bg-surface-dark p-1 border border-border-dark">
-                  <label className="flex flex-1 cursor-pointer items-center justify-center rounded-full py-2 text-sm font-bold transition-all has-[:checked]:bg-primary has-[:checked]:text-background-dark has-[:checked]:shadow-md text-text-muted">
-                    <input defaultChecked className="sr-only" name="auth-mode" type="radio" value="login" />
-                    <span>Log In</span>
-                  </label>
-                  <label className="flex flex-1 cursor-pointer items-center justify-center rounded-full py-2 text-sm font-bold transition-all has-[:checked]:bg-primary has-[:checked]:text-background-dark has-[:checked]:shadow-md text-text-muted">
-                    <input className="sr-only" name="auth-mode" type="radio" value="signup" />
-                    <span>Sign Up</span>
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className={`flex flex-1 items-center justify-center rounded-full py-2 text-sm font-bold transition-all ${
+                      authMode === 'login' 
+                        ? 'bg-primary text-background-dark shadow-md' 
+                        : 'text-text-muted'
+                    }`}
+                  >
+                    Log In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('signup');
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className={`flex flex-1 items-center justify-center rounded-full py-2 text-sm font-bold transition-all ${
+                      authMode === 'signup' 
+                        ? 'bg-primary text-background-dark shadow-md' 
+                        : 'text-text-muted'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
                 </div>
               </div>
 
               {/* Header */}
               <div className="mb-8 text-center sm:text-left">
-                <h2 className="text-3xl font-bold tracking-tight text-white mb-2">Selamat Datang</h2>
-                <p className="text-text-muted">Silakan masukkan detail Anda untuk masuk.</p>
+                <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+                  {authMode === 'login' ? 'Selamat Datang' : 'Buat Akun Baru'}
+                </h2>
+                <p className="text-text-muted">
+                  {authMode === 'login' 
+                    ? 'Silakan masukkan detail Anda untuk masuk.' 
+                    : 'Daftar untuk mulai mencatat pengeluaran Anda.'}
+                </p>
               </div>
 
+              {/* Error/Success Messages */}
+              {error && (
+                <div className="mb-4 rounded-xl bg-red-900/30 border border-red-500/50 p-4">
+                  <p className="text-sm text-red-200">{error}</p>
+                </div>
+              )}
+              {success && (
+                <div className="mb-4 rounded-xl bg-green-900/30 border border-green-500/50 p-4">
+                  <p className="text-sm text-green-200">{success}</p>
+                </div>
+              )}
+
               {/* Form */}
-              <form action="#" className="flex flex-col gap-5">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                {/* Full Name Input (Signup Only) */}
+                {authMode === 'signup' && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white" htmlFor="fullName">Nama Lengkap (Opsional)</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-text-muted">
+                        <span className="material-symbols-outlined text-xl">person</span>
+                      </div>
+                      <input 
+                        className="block w-full rounded-xl border border-border-dark bg-surface-dark py-3.5 pl-11 pr-4 text-white placeholder-text-muted focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" 
+                        id="fullName" 
+                        placeholder="Budiono" 
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Email Input */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white" htmlFor="email">Email address</label>
@@ -180,6 +303,9 @@ export default function Home() {
                       id="email" 
                       placeholder="name@example.com" 
                       type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
                 </div>
@@ -195,30 +321,40 @@ export default function Home() {
                       className="block w-full rounded-xl border border-border-dark bg-surface-dark py-3.5 pl-11 pr-11 text-white placeholder-text-muted focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" 
                       id="password" 
                       placeholder="••••••••" 
-                      type="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <button 
                       className="absolute inset-y-0 right-0 flex items-center pr-4 text-text-muted hover:text-white transition-colors" 
                       type="button"
+                      onClick={() => setShowPassword(!showPassword)}
                     >
-                      <span className="material-symbols-outlined text-xl">visibility</span>
+                      <span className="material-symbols-outlined text-xl">
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
                     </button>
                   </div>
                 </div>
 
                 {/* Forgot Password */}
-                <div className="flex items-center justify-end">
-                  <a className="text-sm font-medium text-primary hover:text-primary-hover hover:underline" href="#">
-                    Lupa Password?
-                  </a>
-                </div>
+                {authMode === 'login' && (
+                  <div className="flex items-center justify-end">
+                    <a className="text-sm font-medium text-primary hover:text-primary-hover hover:underline" href="#">
+                      Lupa Password?
+                    </a>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 <button 
-                  className="flex w-full items-center justify-center rounded-full bg-primary px-6 py-3.5 text-base font-bold text-background-dark shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] hover:bg-primary-hover active:scale-[0.98]" 
+                  className="flex w-full items-center justify-center rounded-full bg-primary px-6 py-3.5 text-base font-bold text-background-dark shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed" 
                   type="submit"
+                  disabled={loading}
                 >
-                  Log In
+                  {loading ? 'Memproses...' : (authMode === 'login' ? 'Log In' : 'Sign Up')}
                 </button>
               </form>
 

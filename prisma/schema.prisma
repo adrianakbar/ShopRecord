@@ -1,0 +1,144 @@
+// Prisma Schema for ShopRecord
+// Menggunakan Supabase PostgreSQL sebagai database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public"]
+}
+
+// =====================================================
+// PUBLIC SCHEMA (Application Tables)
+// Note: User authentication is managed by Supabase Auth.
+// We reference auth.users via UUID but don't manage that table with Prisma.
+// =====================================================
+
+model Category {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  icon      String?  @db.VarChar(50)
+  color     String?  @db.VarChar(7)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+  expenses  Expense[]
+  budgets   Budget[]
+  templates Template[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("categories")
+  @@schema("public")
+}
+
+model Expense {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  categoryId   String?  @map("category_id") @db.Uuid
+  item         String   @db.VarChar(255)
+  amount       Decimal  @db.Decimal(15, 2)
+  expenseDate  DateTime @map("expense_date") @db.Date
+  notes        String?  @db.Text
+  isTemplate   Boolean  @default(false) @map("is_template")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([expenseDate])
+  @@index([userId, expenseDate])
+  @@index([userId, isTemplate], map: "idx_expenses_template")
+  @@map("expenses")
+  @@schema("public")
+}
+
+model Budget {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  categoryId     String?  @map("category_id") @db.Uuid
+  amount         Decimal  @db.Decimal(15, 2)
+  month          Int
+  year           Int
+  alertThreshold Int      @default(80) @map("alert_threshold")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month, year])
+  @@index([userId])
+  @@index([userId, year, month], map: "idx_budgets_period")
+  @@map("budgets")
+  @@schema("public")
+}
+
+model Template {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  categoryId  String?   @map("category_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  item        String    @db.VarChar(255)
+  amount      Decimal?  @db.Decimal(15, 2)
+  notes       String?   @db.Text
+  usageCount  Int       @default(0) @map("usage_count")
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, usageCount(sort: Desc)], map: "idx_templates_usage")
+  @@map("templates")
+  @@schema("public")
+}
+
+model AiParsingLog {
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  inputText        String   @map("input_text") @db.Text
+  parsedResult     Json?    @map("parsed_result") @db.JsonB
+  success          Boolean  @default(true)
+  errorMessage     String?  @map("error_message") @db.Text
+  processingTimeMs Int?     @map("processing_time_ms")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)], map: "idx_ai_logs_created")
+  @@map("ai_parsing_logs")
+  @@schema("public")
+}
+
+model UserPreferences {
+  userId                String    @id @map("user_id") @db.Uuid
+  darkMode              Boolean   @default(true) @map("dark_mode")
+  currency              String    @default("IDR") @db.VarChar(3)
+  dateFormat            String    @default("DD/MM/YYYY") @map("date_format") @db.VarChar(20)
+  defaultCategoryId     String?   @map("default_category_id") @db.Uuid
+  notificationsEnabled  Boolean   @default(true) @map("notifications_enabled")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  // userId references auth.users(id) - managed by Supabase
+
+  @@map("user_preferences")
+  @@schema("public")
+}
