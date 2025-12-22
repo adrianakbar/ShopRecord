@@ -201,7 +201,7 @@ export default function QuickAdd() {
 
   return (
     <>
-      <Navigation currentPage="quick-add" />
+      {/* <Navigation currentPage="quick-add" /> */}
 
       {/* Main Content */}
       <main className="flex-grow flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">

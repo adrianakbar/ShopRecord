@@ -1,24 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import FloatingActionButton from '@/components/FloatingActionButton';
 
 // Type definitions
-interface ExpenseStat {
-  label: string;
-  amount: number;
-  trend: number;
-  isPositive: boolean;
-  icon: string;
-  iconBgColor: string;
-}
-
 interface CategoryData {
   name: string;
   amount: number;
   percentage: number;
   color: string;
+  icon: string;
 }
 
 interface ActivityItem {
@@ -29,77 +21,80 @@ interface ActivityItem {
   timestamp: string;
   icon: string;
   iconColor: string;
-  iconBgColor: string;
+}
+
+interface DashboardData {
+  stats: {
+    today: {
+      total: number;
+      trend: number;
+    };
+    monthly: {
+      total: number;
+      trend: number;
+    };
+  };
+  topCategories: CategoryData[];
+  recentActivity: ActivityItem[];
 }
 
 export default function DashboardPage() {
   const [naturalInput, setNaturalInput] = useState('');
-  const userName = 'Alex';
+  const userName = 'Adrian';
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - will be replaced with API calls
-  const stats: ExpenseStat[] = [
+  // Fetch dashboard data
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Error fetching dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboard();
+  }, []);
+
+  const stats = dashboardData ? [
     {
-      label: 'Total Today',
-      amount: 45.50,
-      trend: 12,
-      isPositive: true,
+      label: 'Total Hari Ini',
+      amount: dashboardData.stats.today.total,
+      trend: dashboardData.stats.today.trend,
+      isPositive: dashboardData.stats.today.trend >= 0,
       icon: 'calendar_today',
       iconBgColor: 'bg-white/5 border-white/10'
     },
     {
-      label: 'Total This Month',
-      amount: 1205.00,
-      trend: -5,
-      isPositive: false,
+      label: 'Total Bulan Ini',
+      amount: dashboardData.stats.monthly.total,
+      trend: dashboardData.stats.monthly.trend,
+      isPositive: dashboardData.stats.monthly.trend >= 0,
       icon: 'date_range',
       iconBgColor: 'bg-white/5 dark:border-white/10'
     }
-  ];
+  ] : [];
 
-  const topCategories: CategoryData[] = [
-    { name: 'Food & Dining', amount: 450, percentage: 65, color: 'bg-primary' },
-    { name: 'Transportation', amount: 120, percentage: 35, color: 'bg-yellow-400' },
-    { name: 'Entertainment', amount: 85, percentage: 20, color: 'bg-blue-400' }
-  ];
-
-  const recentActivity: ActivityItem[] = [
-    {
-      id: '1',
-      name: 'Starbucks Coffee',
-      category: 'Food & Drink',
-      amount: 5.50,
-      timestamp: 'Today, 9:41 AM',
-      icon: 'local_cafe',
-      iconColor: 'text-orange-600 dark:text-orange-400',
-      iconBgColor: 'bg-orange-100 dark:bg-orange-500/10 dark:border-orange-500/20'
-    },
-    {
-      id: '2',
-      name: 'Uber Ride',
-      category: 'Transport',
-      amount: 18.25,
-      timestamp: 'Yesterday, 6:20 PM',
-      icon: 'directions_car',
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      iconBgColor: 'bg-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20'
-    },
-    {
-      id: '3',
-      name: 'Whole Foods Market',
-      category: 'Groceries',
-      amount: 82.10,
-      timestamp: 'Yesterday, 12:30 PM',
-      icon: 'shopping_bag',
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      iconBgColor: 'bg-purple-100 dark:bg-purple-500/10 dark:border-purple-500/20'
-    }
-  ];
+  const topCategories = dashboardData?.topCategories || [];
+  const recentActivity = dashboardData?.recentActivity || [];
 
   const handleAddExpense = () => {
     if (naturalInput.trim()) {
-      // TODO: Send to AI parser endpoint
-      console.log('Adding expense:', naturalInput);
-      setNaturalInput('');
+      // Redirect to quick-add page
+      window.location.href = '/quick-add';
     }
   };
 
@@ -119,18 +114,18 @@ export default function DashboardPage() {
           <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div className="flex flex-col gap-1">
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight dark:text-white">
-                Hello, {userName}
+                Halo, {userName}
               </h2>
               <p className="text-gray-500 dark:text-text-dim">
-                Here is your financial summary for today.
+                Ringkasan keuangan Anda hari ini.
               </p>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">
-                AI Active
+                AI Aktif
               </span>
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                Last updated: Just now
+                Baru saja diperbarui
               </span>
             </div>
           </header>
@@ -145,7 +140,7 @@ export default function DashboardPage() {
               </div>
               <input
                 className="w-full bg-white dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none ring-1 ring-gray-200 dark:ring-border-dark rounded-full py-4 pl-14 pr-32 shadow-lg dark:shadow-none focus:ring-2 focus:ring-primary focus:outline-none transition-all text-lg"
-                placeholder='Try: "Spent $15 on coffee at Starbucks..."'
+                placeholder='Coba: "Beli ayam 10rb, beli bensin 50rb..."'
                 type="text"
                 value={naturalInput}
                 onChange={(e) => setNaturalInput(e.target.value)}
@@ -155,136 +150,181 @@ export default function DashboardPage() {
                 onClick={handleAddExpense}
                 className="absolute right-2 top-1.5 bottom-1.5 bg-primary hover:bg-primary-hover text-white px-6 rounded-full font-bold text-sm transition-transform active:scale-95 flex items-center gap-2 shadow-md shadow-primary/30"
               >
-                <span>Add</span>
+                <span>Tambah</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
               </button>
             </label>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-gray-400">Memuat data...</div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400">
+              {error}
+            </div>
+          )}
+
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Today's Total - Featured Card */}
-            <div className="flex flex-col p-6 rounded-lg bg-surface-dark border border-border-dark text-white relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-[60px] -mr-10 -mt-10 group-hover:bg-primary/20 transition-all duration-500"></div>
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
-                  <span className="material-symbols-outlined text-primary">
-                    {stats[0].icon}
-                  </span>
-                </div>
-                <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full ${
-                  stats[0].isPositive 
-                    ? 'text-primary bg-primary/10 border border-primary/20' 
-                    : 'text-red-400 bg-red-400/10 border border-red-400/20'
-                }`}>
-                  <span className="material-symbols-outlined text-sm mr-1">
-                    {stats[0].isPositive ? 'trending_up' : 'trending_down'}
-                  </span>
-                  {stats[0].isPositive ? '+' : ''}{stats[0].trend}%
-                </span>
-              </div>
-              <div className="mt-auto relative z-10">
-                <p className="text-gray-400 text-sm font-medium mb-1">{stats[0].label}</p>
-                <h3 className="text-4xl font-extrabold tracking-tight text-white">
-                  ${stats[0].amount.toFixed(2)}
-                </h3>
-              </div>
-            </div>
-
-            {/* Monthly Total Card */}
-            <div className="flex flex-col p-6 rounded-lg bg-white dark:bg-surface-dark dark:text-white shadow-sm dark:shadow-none border border-gray-100 dark:border-border-dark relative overflow-hidden group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-gray-100 dark:bg-white/5 dark:border dark:border-white/10 rounded-2xl transition-colors">
-                  <span className="material-symbols-outlined text-gray-600 dark:text-gray-300">
-                    {stats[1].icon}
-                  </span>
-                </div>
-                <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full ${
-                  stats[1].isPositive 
-                    ? 'text-primary bg-primary/10 border border-primary/20' 
-                    : 'text-red-400 bg-red-400/10 border border-red-400/20'
-                }`}>
-                  <span className="material-symbols-outlined text-sm mr-1">
-                    {stats[1].isPositive ? 'trending_up' : 'trending_down'}
-                  </span>
-                  {stats[1].isPositive ? '+' : ''}{stats[1].trend}%
-                </span>
-              </div>
-              <div className="mt-auto">
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">
-                  {stats[1].label}
-                </p>
-                <h3 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                  ${stats[1].amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h3>
-              </div>
-            </div>
-
-            {/* Top Categories Card */}
-            <div className="flex flex-col p-6 rounded-lg bg-white dark:bg-surface-dark shadow-sm dark:shadow-none border border-gray-100 dark:border-border-dark md:col-span-2 lg:col-span-1">
-              <div className="flex justify-between items-center mb-5">
-                <h4 className="text-lg font-bold dark:text-white">Top Categories</h4>
-                <button className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors">
-                  See Details
-                </button>
-              </div>
-              <div className="flex flex-col gap-5 justify-center h-full">
-                {topCategories.map((category, index) => (
-                  <div key={index} className="flex flex-col gap-2">
-                    <div className="flex justify-between text-sm items-end">
-                      <span className="font-medium text-gray-600 dark:text-gray-300">
-                        {category.name}
-                      </span>
-                      <span className="font-bold text-gray-900 dark:text-white">
-                        ${category.amount}
+          {!loading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Today's Total - Featured Card */}
+              {stats.length > 0 && (
+                <div className="flex flex-col p-6 rounded-lg bg-surface-dark border border-border-dark text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-[60px] -mr-10 -mt-10 group-hover:bg-primary/20 transition-all duration-500"></div>
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-primary">
+                        {stats[0].icon}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`${category.color} h-2 rounded-full shadow-[0_0_10px_rgba(83,210,45,0.4)]`}
-                        style={{ width: `${category.percentage}%` }}
-                      ></div>
-                    </div>
+                    {stats[0].trend !== 0 && (
+                      <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full ${
+                        stats[0].isPositive 
+                          ? 'text-primary bg-primary/10 border border-primary/20' 
+                          : 'text-red-400 bg-red-400/10 border border-red-400/20'
+                      }`}>
+                        <span className="material-symbols-outlined text-sm mr-1">
+                          {stats[0].isPositive ? 'trending_up' : 'trending_down'}
+                        </span>
+                        {stats[0].isPositive ? '+' : ''}{stats[0].trend}%
+                      </span>
+                    )}
                   </div>
-                ))}
+                  <div className="mt-auto relative z-10">
+                    <p className="text-gray-400 text-sm font-medium mb-1">{stats[0].label}</p>
+                    <h3 className="text-4xl font-extrabold tracking-tight text-white">
+                      Rp {stats[0].amount.toLocaleString('id-ID')}
+                    </h3>
+                  </div>
+                </div>
+              )}
+
+              {/* Monthly Total Card */}
+              {stats.length > 1 && (
+                <div className="flex flex-col p-6 rounded-lg bg-white dark:bg-surface-dark dark:text-white shadow-sm dark:shadow-none border border-gray-100 dark:border-border-dark relative overflow-hidden group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-gray-100 dark:bg-white/5 dark:border dark:border-white/10 rounded-2xl transition-colors">
+                      <span className="material-symbols-outlined text-gray-600 dark:text-gray-300">
+                        {stats[1].icon}
+                      </span>
+                    </div>
+                    {stats[1].trend !== 0 && (
+                      <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full ${
+                        stats[1].isPositive 
+                          ? 'text-primary bg-primary/10 border border-primary/20' 
+                          : 'text-red-400 bg-red-400/10 border border-red-400/20'
+                      }`}>
+                        <span className="material-symbols-outlined text-sm mr-1">
+                          {stats[1].isPositive ? 'trending_up' : 'trending_down'}
+                        </span>
+                        {stats[1].isPositive ? '+' : ''}{stats[1].trend}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-auto">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">
+                      {stats[1].label}
+                    </p>
+                    <h3 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                      Rp {stats[1].amount.toLocaleString('id-ID')}
+                    </h3>
+                  </div>
+                </div>
+              )}
+
+              {/* Top Categories Card */}
+              <div className="flex flex-col p-6 rounded-lg bg-white dark:bg-surface-dark shadow-sm dark:shadow-none border border-gray-100 dark:border-border-dark md:col-span-2 lg:col-span-1">
+                <div className="flex justify-between items-center mb-5">
+                  <h4 className="text-lg font-bold dark:text-white">Kategori Teratas</h4>
+                  <a href="/history" className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors">
+                    Lihat Detail
+                  </a>
+                </div>
+                {topCategories.length > 0 ? (
+                  <div className="flex flex-col gap-5 justify-center h-full">
+                    {topCategories.map((category, index) => (
+                      <div key={index} className="flex flex-col gap-2">
+                        <div className="flex justify-between text-sm items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-gray-400 text-[20px]">
+                              {category.icon}
+                            </span>
+                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                              {category.name}
+                            </span>
+                          </div>
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            Rp {category.amount.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-primary h-2 rounded-full shadow-[0_0_10px_rgba(83,210,45,0.4)]"
+                            style={{ width: `${category.percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 py-8">
+                    <span className="material-symbols-outlined text-[48px]">category</span>
+                    <p className="text-sm">Belum ada data kategori</p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Recent Activity */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold dark:text-white">Recent Activity</h2>
-              <button className="text-sm font-bold text-primary hover:text-primary-hover transition-colors">
-                View All
-              </button>
-            </div>
-            <div className="flex flex-col gap-3">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-border-dark hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-card-hover transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-full ${activity.iconBgColor} ${activity.iconColor} flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors border border-transparent group-hover:border-primary`}>
-                      <span className="material-symbols-outlined">{activity.icon}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <p className="font-bold text-gray-900 dark:text-white text-base">
-                        {activity.name}
+          {!loading && !error && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold dark:text-white">Aktivitas Terkini</h2>
+                <a href="/history" className="text-sm font-bold text-primary hover:text-primary-hover transition-colors">
+                  Lihat Semua
+                </a>
+              </div>
+              {recentActivity.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-border-dark hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-card-hover transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-[#1c2e18] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-[#142210] transition-colors border border-transparent group-hover:border-primary">
+                          <span className="material-symbols-outlined">{activity.icon}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="font-bold text-gray-900 dark:text-white text-base">
+                            {activity.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {activity.timestamp} • {activity.category}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="font-bold text-gray-900 dark:text-white text-lg">
+                        Rp {activity.amount.toLocaleString('id-ID')}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {activity.timestamp} • {activity.category}
-                      </p>
                     </div>
-                  </div>
-                  <p className="font-bold text-gray-900 dark:text-white text-lg">
-                    -${activity.amount.toFixed(2)}
-                  </p>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-border-dark">
+                  <span className="material-symbols-outlined text-gray-400 text-[48px]">receipt_long</span>
+                  <p className="text-gray-400 text-sm">Belum ada aktivitas</p>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </main>
 

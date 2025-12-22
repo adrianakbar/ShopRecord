@@ -3,7 +3,7 @@ import Navigation from '@/components/Navigation';
 export default function ReviewPage() {
   return (
     <div className="relative flex h-full w-full flex-col grow">
-      <Navigation currentPage='review'/>
+      {/* <Navigation currentPage='review'/> */}
 
       {/* Main Content Layout */}
       <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-40 w-full">

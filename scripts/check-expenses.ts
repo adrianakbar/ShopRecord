@@ -9,8 +9,8 @@ async function checkData() {
   });
   
   console.log(`Total expenses: ${expenses.length}`);
-  expenses.forEach(e => {
-    console.log(`${e.item} - Rp ${e.amount} - ${e.category.name} - ${e.createdAt.toISOString().split('T')[0]}`);
+  expenses.forEach((e: typeof expenses[number]) => {
+    console.log(`${e.item} - Rp ${e.amount} - ${e.category?.name || 'Tanpa Kategori'} - ${e.createdAt.toISOString().split('T')[0]}`);
   });
 }
 

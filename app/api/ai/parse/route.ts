@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       data: {
         userId,
         inputText: text.trim(),
-        parsedResult: parseResult.expenses as unknown as Record<string, unknown>,
+        parsedResult: parseResult.expenses as any,
         success: parseResult.success,
         errorMessage: parseResult.error || null,
         processingTimeMs: processingTime,
