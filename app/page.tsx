@@ -50,7 +50,7 @@ export default function Home() {
       }
 
       if (authMode === 'login') {
-        router.push('/quick-add');
+        router.push('/dashboard');
         router.refresh();
       } else {
         setSuccess(data.message);
@@ -380,13 +380,6 @@ export default function Home() {
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1y9cYJgRrGbnbLk4qQ3g3d_raqxCxTeA5vqXTh3LVeAPLsHtistp3nfYeFqTNV5qn7sY7U5zytl_uEu6KFBmuKwbbxazI3s6vmz5aM1o9comkTsHep7J8l3147MLax6L-S5QB2I9JuicGTuw7Nn-Z3hrF-AjsjgFrqPNeQ1u78d-kr_vkBXS_oqQm0VCJ7Y1VYvKjoSiFt-EOA806eSi91Ui5RbdwzC3T_NKcF9tEIeYXcrOcs4llRcDmRX15oOmToJ2T2HvGmV4"
                   />
                   Google
-                </button>
-                <button 
-                  className="flex flex-1 items-center justify-center gap-3 rounded-full border border-border-dark bg-surface-dark px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-border-dark/50" 
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-xl">ios</span>
-                  Apple
                 </button>
               </div>
 

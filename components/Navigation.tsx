@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
+
 interface NavigationProps {
-  currentPage?: 'dashboard' | 'quick-add' | 'reports' | 'settings' | 'review';
+  currentPage?: 'dashboard' | 'transactions' | 'history' | 'analytics';
   variant?: 'default' | 'simple';
   showNotifications?: boolean;
 }
@@ -13,14 +15,14 @@ export default function Navigation({
 }: NavigationProps) {
   if (variant === 'simple') {
     return (
-      <div className="w-full border-b border-[#2e4328] bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
+      <div className="w-full border-b border-border-dark bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
         <div className="px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-4 text-white cursor-pointer">
+          <Link href="/" className="flex items-center gap-4 text-white cursor-pointer">
             <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined">account_balance_wallet</span>
             </div>
             <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">ShopRecord</h2>
-          </a>
+          </Link>
           <div className="flex items-center gap-4">
             {showNotifications && (
               <button className="hidden sm:flex size-10 items-center justify-center rounded-full bg-surface-input hover:bg-white/10 text-white transition-colors">
@@ -41,11 +43,11 @@ export default function Navigation({
   }
 
   return (
-    <nav className="border-b border-gray-200 dark:border-[#2e4328] bg-surface-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+    <nav className="border-b border-gray-200 dark:border-border-dark bg-surface-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-3 text-white">
+          <Link href="/" className="flex items-center gap-3 text-white">
             <div className="flex items-center justify-center size-8 rounded-full bg-primary/20 text-primary">
               <span className="material-symbols-outlined text-xl">
                 account_balance_wallet
@@ -54,7 +56,7 @@ export default function Navigation({
             <h2 className="text-white text-lg font-bold leading-tight tracking-tight">
               ShopRecord
             </h2>
-          </a>
+          </Link>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex flex-1 justify-end items-center gap-8">
@@ -71,38 +73,38 @@ export default function Navigation({
               </a>
               <a
                 className={`text-sm font-medium transition-colors ${
-                  currentPage === 'quick-add'
+                  currentPage === 'transactions'
                     ? 'text-primary'
                     : 'hover:text-primary'
                 }`}
-                href="/quick-add"
+                href="/transactions"
               >
-                Quick Add
+                Transactions
               </a>
               <a
                 className={`text-sm font-medium transition-colors ${
-                  currentPage === 'reports'
+                  currentPage === 'history'
                     ? 'text-primary'
                     : 'hover:text-primary'
                 }`}
-                href="/reports"
+                href="/history"
               >
-                Reports
+                History
               </a>
               <a
                 className={`text-sm font-medium transition-colors ${
-                  currentPage === 'settings'
+                  currentPage === 'analytics'
                     ? 'text-primary'
                     : 'hover:text-primary'
                 }`}
-                href="/settings"
+                href="/analytics"
               >
-                Settings
+                Analytics
               </a>
             </nav>
 
             {/* Profile */}
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-[#2e4328]">
+            <div className="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-border-dark">
               <div
                 className="size-9 rounded-full bg-cover bg-center ring-2 ring-primary/20"
                 style={{

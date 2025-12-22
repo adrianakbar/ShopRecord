@@ -19,6 +19,9 @@ const config: Config = {
         "surface-input": "#2a3b26",
         "border-dark": "#2e4328",
         "text-muted": "#a2c398",
+        "card-dark": "#151A21",
+        "card-hover": "#1E252F",
+        "text-dim": "#94A3B8",
       },
       fontFamily: {
         display: ["Manrope", "sans-serif"],
