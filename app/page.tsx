@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import GalaxyEffect from '@/components/GalaxyEffect';
 
 export default function Home() {
   const router = useRouter();
@@ -68,6 +69,7 @@ export default function Home() {
   };
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden">
+      <GalaxyEffect />
       {/* Top Navigation (Simplified for Login) */}
       <header className="flex items-center justify-between border-b border-solid border-b-border-dark px-6 py-4 lg:px-10">
         <div className="flex items-center gap-3 text-white">

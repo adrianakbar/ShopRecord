@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma';
 import { config } from 'dotenv';
+import { SYSTEM_USER_ID, DEFAULT_CATEGORIES } from '../lib/constants';
 
 config({ path: '.env.local' });
 
@@ -7,85 +8,36 @@ config({ path: '.env.local' });
 const USER_ID = process.env.USER_ID || '00000000-0000-0000-0000-000000000001';
 
 async function main() {
-  console.log('🌱 Starting seed for user:', USER_ID);
+  console.log('🌱 Starting seed...');
+  
+  // 1. Clean and create SYSTEM categories (global/default categories)
+  console.log('📦 Setting up system categories...');
+  await prisma.category.deleteMany({ where: { userId: SYSTEM_USER_ID } });
+  
+  const systemCategories = await Promise.all(
+    DEFAULT_CATEGORIES.map(cat => 
+      prisma.category.create({
+        data: {
+          userId: SYSTEM_USER_ID,
+          name: cat.name,
+          icon: cat.icon,
+          color: cat.color,
+        },
+      })
+    )
+  );
+  
+  console.log(`✅ Created ${systemCategories.length} system categories`);
 
-  // Clean existing data for this user
+  // 2. Clean existing data for demo user
+  console.log(`\n🌱 Seeding data for user: ${USER_ID}`);
   await prisma.expense.deleteMany({ where: { userId: USER_ID } });
   await prisma.category.deleteMany({ where: { userId: USER_ID } });
   
-  console.log('🗑️  Cleaned existing data');
+  console.log('🗑️  Cleaned existing user data');
 
-  // Create Categories
-  const categories = await Promise.all([
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Makanan & Minuman',
-        icon: 'restaurant',
-        color: '#FF6B6B',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Belanjaan',
-        icon: 'shopping_cart',
-        color: '#4ECDC4',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Transportasi',
-        icon: 'directions_car',
-        color: '#95E1D3',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Utilitas',
-        icon: 'receipt_long',
-        color: '#F38181',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Hiburan',
-        icon: 'movie',
-        color: '#AA96DA',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Belanja',
-        icon: 'shopping_bag',
-        color: '#FCBAD3',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Kesehatan',
-        icon: 'local_hospital',
-        color: '#FFFFD2',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: USER_ID,
-        name: 'Kopi & Kafe',
-        icon: 'local_cafe',
-        color: '#A8DADC',
-      },
-    }),
-  ]);
-
-  console.log('✅ Created categories');
-
-  // Helper to get date
+  // 3. Create demo expenses using system categories
+  // Helper to get dates
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -98,12 +50,11 @@ async function main() {
   const twoWeeksAgo = new Date(today);
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-  // Create Expenses
   const expenses = [
     // Today's expenses
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Kopi & Kafe')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Starbucks Coffee',
       amount: 5.50,
       expenseDate: today,
@@ -111,7 +62,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Belanjaan')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Belanjaan')?.id,
       item: 'Whole Foods Market',
       amount: 39.50,
       expenseDate: today,
@@ -119,7 +70,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Lunch at Chipotle',
       amount: 12.75,
       expenseDate: today,
@@ -129,7 +80,7 @@ async function main() {
     // Yesterday's expenses
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Uber Trip',
       amount: 25.00,
       expenseDate: yesterday,
@@ -137,7 +88,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Utilitas')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Utilitas')?.id,
       item: 'Electric Bill',
       amount: 95.00,
       expenseDate: yesterday,
@@ -145,7 +96,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Pizza Hut Dinner',
       amount: 28.50,
       expenseDate: yesterday,
@@ -155,7 +106,7 @@ async function main() {
     // 3 days ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Hiburan')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Hiburan')?.id,
       item: 'Netflix Subscription',
       amount: 12.99,
       expenseDate: threeDaysAgo,
@@ -163,7 +114,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Kopi & Kafe')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Dunkin Donuts',
       amount: 8.25,
       expenseDate: threeDaysAgo,
@@ -173,7 +124,7 @@ async function main() {
     // 5 days ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Belanja')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Amazon Purchase',
       amount: 45.99,
       expenseDate: fiveDaysAgo,
@@ -181,7 +132,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Gas Station',
       amount: 52.00,
       expenseDate: fiveDaysAgo,
@@ -189,7 +140,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Sushi Restaurant',
       amount: 65.00,
       expenseDate: fiveDaysAgo,
@@ -199,7 +150,7 @@ async function main() {
     // 1 week ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Kesehatan')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Kesehatan')?.id,
       item: 'Pharmacy - CVS',
       amount: 23.50,
       expenseDate: oneWeekAgo,
@@ -207,7 +158,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Belanjaan')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Belanjaan')?.id,
       item: 'Walmart Groceries',
       amount: 78.25,
       expenseDate: oneWeekAgo,
@@ -215,7 +166,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Hiburan')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Hiburan')?.id,
       item: 'Movie Tickets',
       amount: 32.00,
       expenseDate: oneWeekAgo,
@@ -225,7 +176,7 @@ async function main() {
     // 2 weeks ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Belanja')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Target Shopping',
       amount: 125.50,
       expenseDate: twoWeeksAgo,
@@ -233,7 +184,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Olive Garden',
       amount: 48.75,
       expenseDate: twoWeeksAgo,
@@ -241,7 +192,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Lyft Ride',
       amount: 18.50,
       expenseDate: twoWeeksAgo,
@@ -253,15 +204,17 @@ async function main() {
     data: expenses,
   });
 
-  console.log('✅ Created expenses');
+  console.log(`✅ Created ${expenses.length} demo expenses`);
 
   // Get stats
+  const systemCategoryCount = await prisma.category.count({ where: { userId: SYSTEM_USER_ID } });
+  const userCategoryCount = await prisma.category.count({ where: { userId: USER_ID } });
   const expenseCount = await prisma.expense.count({ where: { userId: USER_ID } });
-  const categoryCount = await prisma.category.count({ where: { userId: USER_ID } });
 
   console.log(`\n📊 Seed Summary:`);
+  console.log(`   System Categories: ${systemCategoryCount} (global)`);
   console.log(`   User ID: ${USER_ID}`);
-  console.log(`   Categories: ${categoryCount}`);
+  console.log(`   User Categories: ${userCategoryCount}`);
   console.log(`   Expenses: ${expenseCount}`);
   console.log(`\n✨ Seed completed successfully!`);
 }

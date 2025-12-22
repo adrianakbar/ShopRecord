@@ -1,8 +1,10 @@
 import Navigation from '@/components/Navigation';
+import GalaxyEffect from '@/components/GalaxyEffect';
 
 export default function ReviewPage() {
   return (
     <div className="relative flex h-full w-full flex-col grow">
+      <GalaxyEffect />
       {/* <Navigation currentPage='review'/> */}
 
       {/* Main Content Layout */}

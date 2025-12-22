@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import TransactionItem from '@/components/TransactionItem';
+import { DEFAULT_CATEGORIES } from '@/lib/constants';
+import GalaxyEffect from '@/components/GalaxyEffect';
 
 interface Category {
   id: string;
@@ -18,17 +21,6 @@ interface Transaction {
   notes: string | null;
   category: Category | null;
 }
-
-const DEFAULT_CATEGORIES = [
-  { name: 'Makanan & Minuman', icon: 'restaurant', color: '#ef4444' },
-  { name: 'Belanjaan', icon: 'shopping_cart', color: '#f97316' },
-  { name: 'Transportasi', icon: 'directions_car', color: '#eab308' },
-  { name: 'Utilitas', icon: 'receipt_long', color: '#22c55e' },
-  { name: 'Hiburan', icon: 'movie', color: '#3b82f6' },
-  { name: 'Belanja', icon: 'shopping_bag', color: '#a855f7' },
-  { name: 'Kesehatan', icon: 'local_hospital', color: '#ec4899' },
-  { name: 'Kopi & Kafe', icon: 'local_cafe', color: '#8b5cf6' },
-];
 
 export default function TransactionsPage() {
   // Form state
@@ -151,6 +143,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
+      <GalaxyEffect />
       <Navigation variant="default" currentPage="transactions" />
       
       <main className="flex-1 flex justify-center py-8 px-4 lg:px-40 pb-28">
@@ -332,41 +325,7 @@ export default function TransactionsPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {transactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="group flex items-center justify-between p-4 rounded-xl bg-surface-dark/40 hover:bg-surface-dark transition-all border border-transparent hover:border-primary/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-[#1c2e18] flex items-center justify-center text-primary shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">
-                          {transaction.category?.icon || getCategoryIcon(transaction.category?.name || '')}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <p className="text-white font-semibold text-sm">{transaction.item}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <span>{transaction.category?.name || 'Tanpa Kategori'}</span>
-                          {transaction.notes && (
-                            <>
-                              <span className="size-1 bg-gray-600 rounded-full"></span>
-                              <span className="line-clamp-1">{transaction.notes}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-bold text-sm">
-                        Rp {Number(transaction.amount).toLocaleString('id-ID')}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(transaction.expenseDate).toLocaleDateString('id-ID', { 
-                          day: 'numeric', 
-                          month: 'short' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
+                  <TransactionItem key={transaction.id} transaction={transaction} />
                 ))}
               </div>
             )}

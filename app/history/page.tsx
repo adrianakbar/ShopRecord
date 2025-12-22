@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import FloatingActionButton from '@/components/FloatingActionButton';
+import TransactionItem from '@/components/TransactionItem';
+import GalaxyEffect from '@/components/GalaxyEffect';
 
 // Type definitions
 interface Category {
@@ -120,19 +122,27 @@ export default function HistoryPage() {
 
   const expenseGroups = groupExpensesByDate(expenses);
 
-  // Get icon from category or use default
-  const getExpenseIcon = (category: Category | null): string => {
-    return category?.icon || 'payments';
-  };
+  const handleDelete = async (expenseId: string) => {
+    try {
+      const response = await fetch(`/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+      });
 
-  // Format time from notes or use default
-  const getExpenseTime = (expense: ExpenseItem): string => {
-    const date = new Date(expense.expenseDate);
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      if (!response.ok) {
+        throw new Error('Failed to delete expense');
+      }
+
+      // Remove deleted expense from state
+      setExpenses((prevExpenses) => prevExpenses.filter(exp => exp.id !== expenseId));
+    } catch (err) {
+      console.error('Error deleting expense:', err);
+      alert('Gagal menghapus pengeluaran. Silakan coba lagi.');
+    }
   };
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
+      <GalaxyEffect />
       <Navigation variant="default" currentPage="history" />
       
       <main className="flex-1 flex justify-center py-8 px-4 lg:px-40 pb-28">
@@ -276,46 +286,7 @@ export default function HistoryPage() {
 
                   {/* Expense Items */}
                   {group.expenses.map((expense) => (
-                    <div
-                      key={expense.id}
-                      className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-dark/40 hover:bg-surface-dark hover:shadow-md transition-all gap-4 sm:gap-0 cursor-pointer border border-transparent hover:border-primary/20"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="size-12 rounded-full bg-[#1c2e18] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-[#142210] transition-colors shrink-0">
-                          <span className="material-symbols-outlined">
-                            {getExpenseIcon(expense.category)}
-                          </span>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="text-white font-bold text-base">{expense.item}</p>
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span>{expense.category?.name || 'Tanpa Kategori'}</span>
-                            {expense.notes && (
-                              <>
-                                <span className="size-1 bg-gray-600 rounded-full"></span>
-                                <span className="line-clamp-1">{expense.notes}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between sm:justify-end gap-6 sm:pl-4">
-                        <div className="text-right">
-                          <p className="text-white font-bold text-lg">
-                            Rp {Number(expense.amount).toLocaleString('id-ID')}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {getExpenseTime(expense)}
-                          </p>
-                        </div>
-                        <div className="w-8 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="text-gray-400 hover:text-white">
-                            <span className="material-symbols-outlined">more_vert</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <TransactionItem key={expense.id} transaction={expense} showDelete={true} onDelete={handleDelete} />
                   ))}
                 </div>
               ))}

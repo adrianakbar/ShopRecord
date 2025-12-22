@@ -138,33 +138,20 @@ export async function GET(request: NextRequest) {
       take: 10,
     });
 
-    // Format recent activity
-    const recentActivity = recentExpenses.map(exp => {
-      const expenseDate = new Date(exp.expenseDate);
-      const isToday = expenseDate.toDateString() === today.toDateString();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const isYesterday = expenseDate.toDateString() === yesterday.toDateString();
-
-      let timestamp = '';
-      if (isToday) {
-        timestamp = `Hari ini, ${expenseDate.toLocaleTimeString('id-ID', { hour: 'numeric', minute: '2-digit' })}`;
-      } else if (isYesterday) {
-        timestamp = `Kemarin, ${expenseDate.toLocaleTimeString('id-ID', { hour: 'numeric', minute: '2-digit' })}`;
-      } else {
-        timestamp = expenseDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-      }
-
-      return {
-        id: exp.id,
-        name: exp.item,
-        category: exp.category?.name || 'Tanpa Kategori',
-        amount: Number(exp.amount),
-        timestamp,
-        icon: exp.category?.icon || 'payments',
-        iconColor: exp.category?.color || '#53d22d',
-      };
-    });
+    // Format recent transactions
+    const recentTransactions = recentExpenses.map(exp => ({
+      id: exp.id,
+      item: exp.item,
+      amount: Number(exp.amount),
+      expenseDate: exp.expenseDate.toISOString(),
+      notes: exp.notes,
+      category: exp.category ? {
+        id: exp.category.id,
+        name: exp.category.name,
+        icon: exp.category.icon,
+        color: exp.category.color,
+      } : null,
+    }));
 
     return NextResponse.json({
       stats: {
@@ -178,7 +165,7 @@ export async function GET(request: NextRequest) {
         },
       },
       topCategories: topCategoriesWithPercentage,
-      recentActivity,
+      recentTransactions,
     });
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

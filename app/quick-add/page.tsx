@@ -1,6 +1,7 @@
 "use client";
 
 import Navigation from "@/components/Navigation";
+import GalaxyEffect from "@/components/GalaxyEffect";
 import { useState } from "react";
 
 interface ParsedExpense {
@@ -156,7 +157,6 @@ export default function QuickAdd() {
       // Success - clear form
       setParsedExpenses([]);
       setInputText("");
-      alert(`${data.count} expenses saved successfully!`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save expenses");
     } finally {
@@ -201,6 +201,7 @@ export default function QuickAdd() {
 
   return (
     <>
+      <GalaxyEffect />
       <Navigation currentPage="quick-add" />
 
       {/* Main Content */}

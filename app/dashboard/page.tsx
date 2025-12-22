@@ -3,24 +3,32 @@
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import FloatingActionButton from '@/components/FloatingActionButton';
+import TransactionItem from '@/components/TransactionItem';
+import GalaxyEffect from '@/components/GalaxyEffect';
 
 // Type definitions
+interface Category {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
+interface Transaction {
+  id: string;
+  item: string;
+  amount: number;
+  expenseDate: string;
+  notes: string | null;
+  category: Category | null;
+}
+
 interface CategoryData {
   name: string;
   amount: number;
   percentage: number;
   color: string;
   icon: string;
-}
-
-interface ActivityItem {
-  id: string;
-  name: string;
-  category: string;
-  amount: number;
-  timestamp: string;
-  icon: string;
-  iconColor: string;
 }
 
 interface DashboardData {
@@ -35,7 +43,7 @@ interface DashboardData {
     };
   };
   topCategories: CategoryData[];
-  recentActivity: ActivityItem[];
+  recentTransactions: Transaction[];
 }
 
 export default function DashboardPage() {
@@ -89,7 +97,7 @@ export default function DashboardPage() {
   ] : [];
 
   const topCategories = dashboardData?.topCategories || [];
-  const recentActivity = dashboardData?.recentActivity || [];
+  const recentTransactions = dashboardData?.recentTransactions || [];
 
   const handleAddExpense = () => {
     if (naturalInput.trim()) {
@@ -106,6 +114,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
+      <GalaxyEffect />
       <Navigation variant="default" currentPage="dashboard" />
       
       <main className="flex-1 flex flex-col">
@@ -291,36 +300,16 @@ export default function DashboardPage() {
                   Lihat Semua
                 </a>
               </div>
-              {recentActivity.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  {recentActivity.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-border-dark hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-card-hover transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-[#1c2e18] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-[#142210] transition-colors border border-transparent group-hover:border-primary">
-                          <span className="material-symbols-outlined">{activity.icon}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="font-bold text-gray-900 dark:text-white text-base">
-                            {activity.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {activity.timestamp} • {activity.category}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="font-bold text-gray-900 dark:text-white text-lg">
-                        Rp {activity.amount.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                  ))}
+              {recentTransactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 bg-white dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-white/5">
+                  <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-[48px]">receipt_long</span>
+                  <p className="text-gray-400 dark:text-gray-400 text-sm">Belum ada transaksi</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 gap-3 bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-border-dark">
-                  <span className="material-symbols-outlined text-gray-400 text-[48px]">receipt_long</span>
-                  <p className="text-gray-400 text-sm">Belum ada aktivitas</p>
+                <div className="flex flex-col gap-2">
+                  {recentTransactions.map((transaction) => (
+                    <TransactionItem key={transaction.id} transaction={transaction} showTime={true} />
+                  ))}
                 </div>
               )}
             </div>

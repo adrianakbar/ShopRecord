@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { SYSTEM_USER_ID } from '@/lib/constants';
 
 export async function POST(request: Request) {
   try {
@@ -26,24 +27,28 @@ export async function POST(request: Request) {
 
     // Get or create categories
     const categoryNames = [...new Set(expenses.map((e: { category: string }) => e.category))];
+    
+    // Find categories in both system and user categories
     const categories = await prisma.category.findMany({
       where: {
-        userId,
-        name: { in: categoryNames }
+        OR: [
+          { userId: SYSTEM_USER_ID, name: { in: categoryNames } },
+          { userId, name: { in: categoryNames } }
+        ]
       }
     });
 
     // Map category names to IDs
     const categoryMap = new Map(categories.map(c => [c.name, c.id]));
 
-    // Create missing categories
+    // Create missing categories as USER categories only (not system)
     const missingCategories = categoryNames.filter(name => !categoryMap.has(name));
     if (missingCategories.length > 0) {
       const newCategories = await Promise.all(
         missingCategories.map(name =>
           prisma.category.create({
             data: {
-              userId,
+              userId, // Create as user's custom category
               name,
               icon: 'payments',
               color: '#' + Math.floor(Math.random()*16777215).toString(16),
