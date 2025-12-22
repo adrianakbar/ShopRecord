@@ -120,30 +120,9 @@ export default function HistoryPage() {
 
   const expenseGroups = groupExpensesByDate(expenses);
 
-  // Extract payment method from notes
-  const extractPaymentMethod = (notes: string | null): string => {
-    if (!notes) return 'Cash';
-    
-    const patterns = [
-      /Visa\s*••••\s*\d{4}/i,
-      /MasterCard\s*••••\s*\d{4}/i,
-      /Apple Pay/i,
-      /Bank Transfer/i,
-      /Debit Card/i,
-      /Cash/i,
-    ];
-    
-    for (const pattern of patterns) {
-      const match = notes.match(pattern);
-      if (match) return match[0];
-    }
-    
-    return 'Cash';
-  };
-
   // Get icon from category or use default
   const getExpenseIcon = (category: Category | null): string => {
-    return category?.icon || 'receipt';
+    return category?.icon || 'payments';
   };
 
   // Format time from notes or use default
@@ -163,14 +142,14 @@ export default function HistoryPage() {
             {/* Heading */}
             <div className="flex flex-wrap justify-between items-center gap-4">
               <h1 className="text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">
-                Expense History
+                Riwayat Pengeluaran
               </h1>
             </div>
 
             {/* Loading State */}
             {loading && (
               <div className="flex justify-center items-center py-12">
-                <div className="text-gray-400">Loading expenses...</div>
+                <div className="text-gray-400">Memuat data...</div>
               </div>
             )}
 
@@ -191,14 +170,14 @@ export default function HistoryPage() {
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">
-                    Total Spent this Month
+                    Total Pengeluaran Bulan Ini
                   </p>
                   <div className="flex items-end gap-3">
                     <p className="text-white tracking-tight text-3xl font-bold">
-                      ${Number(stats.monthlyTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      Rp {Number(stats.monthlyTotal).toLocaleString('id-ID')}
                     </p>
                     <span className="text-gray-400 text-sm font-medium mb-1">
-                      {stats.monthlyCount} transactions
+                      {stats.monthlyCount} transaksi
                     </span>
                   </div>
                 </div>
@@ -210,7 +189,7 @@ export default function HistoryPage() {
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">
-                    Most Active Category
+                    Kategori Terbanyak
                   </p>
                   <div className="flex items-end gap-3">
                     <p className="text-white tracking-tight text-3xl font-bold">
@@ -218,7 +197,7 @@ export default function HistoryPage() {
                     </p>
                     {stats.topCategory && (
                       <span className="text-gray-400 text-sm font-medium mb-1">
-                        {stats.topCategory.count} transactions
+                        {stats.topCategory.count} transaksi
                       </span>
                     )}
                   </div>
@@ -237,7 +216,7 @@ export default function HistoryPage() {
                 </div>
                 <input
                   className="w-full h-12 bg-surface-dark border-none rounded-xl pl-12 pr-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary/50 transition-all shadow-sm"
-                  placeholder="Search merchant, notes, or tags..."
+                  placeholder="Cari merchant, catatan, atau tag..."
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -291,7 +270,7 @@ export default function HistoryPage() {
                   <div className="flex items-center justify-between px-2 pb-2 border-b border-surface-dark">
                     <h3 className="text-white font-bold text-lg">{group.date}</h3>
                     <p className="text-gray-400 text-sm font-medium">
-                      Total: <span className="text-white font-bold">${group.total.toFixed(2)}</span>
+                      Total: <span className="text-white font-bold">Rp {group.total.toLocaleString('id-ID')}</span>
                     </p>
                   </div>
 
@@ -310,24 +289,24 @@ export default function HistoryPage() {
                         <div className="flex flex-col">
                           <p className="text-white font-bold text-base">{expense.item}</p>
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span>{expense.category?.name || 'Uncategorized'}</span>
-                            <span className="size-1 bg-gray-600 rounded-full"></span>
-                            <span>{getExpenseTime(expense)}</span>
-                            <span className="size-1 bg-gray-600 rounded-full sm:hidden"></span>
-                            <span className="sm:hidden">{extractPaymentMethod(expense.notes)}</span>
+                            <span>{expense.category?.name || 'Tanpa Kategori'}</span>
+                            {expense.notes && (
+                              <>
+                                <span className="size-1 bg-gray-600 rounded-full"></span>
+                                <span className="line-clamp-1">{expense.notes}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between sm:justify-end gap-6 sm:pl-4">
-                        <div className="hidden sm:flex flex-col items-end gap-0.5">
-                          <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">
-                            {extractPaymentMethod(expense.notes)}
-                          </span>
-                        </div>
                         <div className="text-right">
                           <p className="text-white font-bold text-lg">
-                            ${Number(expense.amount).toFixed(2)}
+                            Rp {Number(expense.amount).toLocaleString('id-ID')}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {getExpenseTime(expense)}
                           </p>
                         </div>
                         <div className="w-8 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
@@ -344,7 +323,7 @@ export default function HistoryPage() {
               {/* Load More */}
               <div className="flex justify-center mt-6">
                 <button className="text-primary hover:text-primary-hover font-bold text-sm flex items-center gap-2 px-6 py-2 rounded-lg hover:bg-white/5 transition-colors">
-                  Load More History
+                  Muat Lebih Banyak
                   <span className="material-symbols-outlined">expand_more</span>
                 </button>
               </div>
@@ -357,9 +336,9 @@ export default function HistoryPage() {
               <div className="text-gray-400 text-6xl">
                 <span className="material-symbols-outlined text-[72px]">receipt_long</span>
               </div>
-              <h3 className="text-white text-xl font-bold">No expenses yet</h3>
+              <h3 className="text-white text-xl font-bold">Belum ada pengeluaran</h3>
               <p className="text-gray-400 text-center max-w-md">
-                Start tracking your expenses by adding your first transaction using the Quick Add button.
+                Mulai catat pengeluaran Anda dengan menambahkan transaksi pertama menggunakan tombol Quick Add.
               </p>
             </div>
           )}

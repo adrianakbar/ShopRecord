@@ -20,7 +20,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Food & Dining',
+        name: 'Makanan & Minuman',
         icon: 'restaurant',
         color: '#FF6B6B',
       },
@@ -28,7 +28,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Groceries',
+        name: 'Belanjaan',
         icon: 'shopping_cart',
         color: '#4ECDC4',
       },
@@ -36,7 +36,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Transportation',
+        name: 'Transportasi',
         icon: 'directions_car',
         color: '#95E1D3',
       },
@@ -44,7 +44,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Utilities',
+        name: 'Utilitas',
         icon: 'receipt_long',
         color: '#F38181',
       },
@@ -52,7 +52,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Entertainment',
+        name: 'Hiburan',
         icon: 'movie',
         color: '#AA96DA',
       },
@@ -60,7 +60,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Shopping',
+        name: 'Belanja',
         icon: 'shopping_bag',
         color: '#FCBAD3',
       },
@@ -68,7 +68,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Healthcare',
+        name: 'Kesehatan',
         icon: 'local_hospital',
         color: '#FFFFD2',
       },
@@ -76,7 +76,7 @@ async function main() {
     prisma.category.create({
       data: {
         userId: USER_ID,
-        name: 'Coffee & Cafe',
+        name: 'Kopi & Kafe',
         icon: 'local_cafe',
         color: '#A8DADC',
       },
@@ -103,7 +103,7 @@ async function main() {
     // Today's expenses
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Coffee & Cafe')?.id,
+      categoryId: categories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Starbucks Coffee',
       amount: 5.50,
       expenseDate: today,
@@ -111,7 +111,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Groceries')?.id,
+      categoryId: categories.find(c => c.name === 'Belanjaan')?.id,
       item: 'Whole Foods Market',
       amount: 39.50,
       expenseDate: today,
@@ -119,7 +119,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Lunch at Chipotle',
       amount: 12.75,
       expenseDate: today,
@@ -129,7 +129,7 @@ async function main() {
     // Yesterday's expenses
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
       item: 'Uber Trip',
       amount: 25.00,
       expenseDate: yesterday,
@@ -137,7 +137,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Utilities')?.id,
+      categoryId: categories.find(c => c.name === 'Utilitas')?.id,
       item: 'Electric Bill',
       amount: 95.00,
       expenseDate: yesterday,
@@ -145,7 +145,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Pizza Hut Dinner',
       amount: 28.50,
       expenseDate: yesterday,
@@ -155,7 +155,7 @@ async function main() {
     // 3 days ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Entertainment')?.id,
+      categoryId: categories.find(c => c.name === 'Hiburan')?.id,
       item: 'Netflix Subscription',
       amount: 12.99,
       expenseDate: threeDaysAgo,
@@ -163,7 +163,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Coffee & Cafe')?.id,
+      categoryId: categories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Dunkin Donuts',
       amount: 8.25,
       expenseDate: threeDaysAgo,
@@ -173,7 +173,7 @@ async function main() {
     // 5 days ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Shopping')?.id,
+      categoryId: categories.find(c => c.name === 'Belanja')?.id,
       item: 'Amazon Purchase',
       amount: 45.99,
       expenseDate: fiveDaysAgo,
@@ -181,7 +181,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
       item: 'Gas Station',
       amount: 52.00,
       expenseDate: fiveDaysAgo,
@@ -189,7 +189,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Sushi Restaurant',
       amount: 65.00,
       expenseDate: fiveDaysAgo,
@@ -199,7 +199,7 @@ async function main() {
     // 1 week ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Healthcare')?.id,
+      categoryId: categories.find(c => c.name === 'Kesehatan')?.id,
       item: 'Pharmacy - CVS',
       amount: 23.50,
       expenseDate: oneWeekAgo,
@@ -207,7 +207,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Groceries')?.id,
+      categoryId: categories.find(c => c.name === 'Belanjaan')?.id,
       item: 'Walmart Groceries',
       amount: 78.25,
       expenseDate: oneWeekAgo,
@@ -215,7 +215,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Entertainment')?.id,
+      categoryId: categories.find(c => c.name === 'Hiburan')?.id,
       item: 'Movie Tickets',
       amount: 32.00,
       expenseDate: oneWeekAgo,
@@ -225,7 +225,7 @@ async function main() {
     // 2 weeks ago
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Shopping')?.id,
+      categoryId: categories.find(c => c.name === 'Belanja')?.id,
       item: 'Target Shopping',
       amount: 125.50,
       expenseDate: twoWeeksAgo,
@@ -233,7 +233,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      categoryId: categories.find(c => c.name === 'Makanan & Minuman')?.id,
       item: 'Olive Garden',
       amount: 48.75,
       expenseDate: twoWeeksAgo,
@@ -241,7 +241,7 @@ async function main() {
     },
     {
       userId: USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      categoryId: categories.find(c => c.name === 'Transportasi')?.id,
       item: 'Lyft Ride',
       amount: 18.50,
       expenseDate: twoWeeksAgo,

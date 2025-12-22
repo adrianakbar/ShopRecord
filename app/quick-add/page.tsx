@@ -4,11 +4,12 @@ import Navigation from "@/components/Navigation";
 import { useState } from "react";
 
 interface ParsedExpense {
-  description: string;
+  item: string;
   amount: number;
   category: string;
   date: string;
   confidence: number;
+  notes?: string;
 }
 
 interface ParseResponse {
@@ -18,23 +19,23 @@ interface ParseResponse {
 }
 
 const CATEGORIES = [
-  { value: "Food & Dining", color: "primary", icon: "restaurant" },
-  { value: "Groceries", color: "[#e8a95e]", icon: "shopping_cart" },
-  { value: "Transportation", color: "[#5ea9e8]", icon: "directions_car" },
-  { value: "Utilities", color: "[#a95ee8]", icon: "lightbulb" },
-  { value: "Entertainment", color: "[#e85e5e]", icon: "movie" },
-  { value: "Shopping", color: "[#5ee8a9]", icon: "shopping_bag" },
-  { value: "Healthcare", color: "[#e8d95e]", icon: "medical_services" },
-  { value: "Coffee & Cafe", color: "[#8e5ee8]", icon: "local_cafe" },
+  { value: "Makanan & Minuman", color: "primary", icon: "restaurant" },
+  { value: "Belanjaan", color: "[#e8a95e]", icon: "shopping_cart" },
+  { value: "Transportasi", color: "[#5ea9e8]", icon: "directions_car" },
+  { value: "Utilitas", color: "[#a95ee8]", icon: "lightbulb" },
+  { value: "Hiburan", color: "[#e85e5e]", icon: "movie" },
+  { value: "Belanja", color: "[#5ee8a9]", icon: "shopping_bag" },
+  { value: "Kesehatan", color: "[#e8d95e]", icon: "medical_services" },
+  { value: "Kopi & Kafe", color: "[#8e5ee8]", icon: "local_cafe" },
 ];
 
-const getCategoryIcon = (category: string) => {
-  const cat = CATEGORIES.find(c => c.value === category);
+const getCategoryIcon = (category: string, customCats: typeof CATEGORIES = []) => {
+  const cat = [...CATEGORIES, ...customCats].find(c => c.value === category);
   return cat?.icon || "payments";
 };
 
-const getCategoryColor = (category: string) => {
-  const cat = CATEGORIES.find(c => c.value === category);
+const getCategoryColor = (category: string, customCats: typeof CATEGORIES = []) => {
+  const cat = [...CATEGORIES, ...customCats].find(c => c.value === category);
   return cat?.color || "primary";
 };
 
@@ -53,6 +54,12 @@ export default function QuickAdd() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showSourceText, setShowSourceText] = useState(false);
+  const [customCategories, setCustomCategories] = useState<Array<{value: string, color: string, icon: string}>>([]);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingExpenseIndex, setEditingExpenseIndex] = useState<number | null>(null);
+
+  const allCategories = [...CATEGORIES, ...customCategories];
 
   const handleProcess = async () => {
     if (!inputText.trim()) return;
@@ -109,11 +116,12 @@ export default function QuickAdd() {
 
   const handleAddExpense = () => {
     const newExpense: ParsedExpense = {
-      description: "",
+      item: "",
       amount: 0,
-      category: "Food & Dining",
+      category: "Makanan & Minuman",
       date: new Date().toISOString().split('T')[0],
       confidence: 1,
+      notes: "",
     };
     setParsedExpenses([...parsedExpenses, newExpense]);
   };
@@ -123,17 +131,66 @@ export default function QuickAdd() {
     setError(null);
 
     try {
-      // TODO: Implement save to database via API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const response = await fetch('/api/expenses/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          expenses: parsedExpenses.map(exp => ({
+            item: exp.item,
+            amount: exp.amount,
+            category: exp.category,
+            date: exp.date,
+            notes: exp.notes || null,
+          }))
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save expenses');
+      }
+
       // Success - clear form
       setParsedExpenses([]);
       setInputText("");
-      alert(`${parsedExpenses.length} expenses saved successfully!`);
+      alert(`${data.count} expenses saved successfully!`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save expenses");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+    
+    const newCategory = {
+      value: newCategoryName.trim(),
+      color: "[#" + Math.floor(Math.random()*16777215).toString(16) + "]", // Random color
+      icon: "payments"
+    };
+    
+    setCustomCategories([...customCategories, newCategory]);
+    
+    // Update expense with new category if editing
+    if (editingExpenseIndex !== null) {
+      handleUpdateExpense(editingExpenseIndex, 'category', newCategory.value);
+      setEditingExpenseIndex(null);
+    }
+    
+    setNewCategoryName("");
+    setShowAddCategoryModal(false);
+  };
+
+  const handleCategoryChange = (index: number, value: string) => {
+    if (value === "__ADD_NEW__") {
+      setEditingExpenseIndex(index);
+      setShowAddCategoryModal(true);
+    } else {
+      handleUpdateExpense(index, 'category', value);
     }
   };
 
@@ -401,22 +458,25 @@ export default function QuickAdd() {
                   <table className="w-full min-w-[800px] text-left border-collapse">
                     <thead>
                       <tr className="bg-[#21301c] border-b border-[#426039]">
-                        <th className="p-4 w-[30%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
-                          Deskripsi
+                        <th className="p-4 w-[25%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                          Item / Nama
                         </th>
-                        <th className="p-4 w-[15%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                        <th className="p-4 w-[12%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
                           Harga
                         </th>
-                        <th className="p-4 w-[20%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                        <th className="p-4 w-[18%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
                           Kategori
                         </th>
                         <th className="p-4 w-[20%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                          Deskripsi
+                        </th>
+                        <th className="p-4 w-[13%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
                           Tanggal
                         </th>
-                        <th className="p-4 w-[10%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                        <th className="p-4 w-[8%] text-xs font-bold text-[#a2c398] uppercase tracking-wider">
                           Confidence
                         </th>
-                        <th className="p-4 w-[5%] text-center text-xs font-bold text-[#a2c398] uppercase tracking-wider">
+                        <th className="p-4 w-[4%] text-center text-xs font-bold text-[#a2c398] uppercase tracking-wider">
                           Action
                         </th>
                       </tr>
@@ -425,12 +485,20 @@ export default function QuickAdd() {
                       {parsedExpenses.map((expense, index) => (
                         <tr key={index} className="group hover:bg-white/5 transition-colors">
                           <td className="p-3">
-                            <input
-                              type="text"
-                              value={expense.description}
-                              onChange={(e) => handleUpdateExpense(index, 'description', e.target.value)}
-                              className="w-full bg-surface-input text-white text-sm font-medium px-4 py-2.5 rounded-full border border-transparent focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder-[#a2c398]/50"
-                            />
+                            <div className="flex items-center gap-2">
+                              <div className={`size-8 rounded-full bg-${getCategoryColor(expense.category, customCategories)}/20 flex items-center justify-center shrink-0`}>
+                                <span className={`material-symbols-outlined text-sm text-${getCategoryColor(expense.category, customCategories)}`}>
+                                  {getCategoryIcon(expense.category, customCategories)}
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                value={expense.item}
+                                onChange={(e) => handleUpdateExpense(index, 'item', e.target.value)}
+                                className="flex-1 bg-surface-input text-white text-sm font-medium px-4 py-2.5 rounded-full border border-transparent focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder-[#a2c398]/50"
+                                placeholder="Nama item..."
+                              />
+                            </div>
                           </td>
                           <td className="p-3">
                             <div className="relative flex items-center">
@@ -454,28 +522,44 @@ export default function QuickAdd() {
                           </td>
                           <td className="p-3">
                             <div className="relative">
-                              <div className="flex items-center gap-2">
-                                <div className={`size-8 rounded-full bg-${getCategoryColor(expense.category)}/20 flex items-center justify-center shrink-0`}>
-                                  <span className={`material-symbols-outlined text-sm text-${getCategoryColor(expense.category)}`}>
-                                    {getCategoryIcon(expense.category)}
-                                  </span>
-                                </div>
-                                <select
-                                  value={expense.category}
-                                  onChange={(e) => handleUpdateExpense(index, 'category', e.target.value)}
-                                  className="flex-1 appearance-none bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer text-sm font-bold px-4 py-2.5 rounded-full border border-transparent focus:border-primary focus:ring-0 focus:outline-none transition-all pr-10"
-                                >
+                              <select
+                                value={expense.category}
+                                onChange={(e) => handleCategoryChange(index, e.target.value)}
+                                className="w-full appearance-none bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer text-sm font-bold px-4 py-2.5 rounded-full border border-transparent focus:border-primary focus:ring-0 focus:outline-none transition-all pr-10"
+                              >
+                                <optgroup label="Default Categories">
                                   {CATEGORIES.map((cat) => (
                                     <option key={cat.value} value={cat.value}>
                                       {cat.value}
                                     </option>
                                   ))}
-                                </select>
-                                <div className="pointer-events-none absolute right-3 flex items-center text-primary">
-                                  <span className="material-symbols-outlined text-sm">expand_more</span>
-                                </div>
+                                </optgroup>
+                                {customCategories.length > 0 && (
+                                  <optgroup label="Custom Categories">
+                                    {customCategories.map((cat) => (
+                                      <option key={cat.value} value={cat.value}>
+                                        {cat.value}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                <option value="__ADD_NEW__" className="font-bold text-primary">
+                                  + Add New Category
+                                </option>
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-primary">
+                                <span className="material-symbols-outlined text-sm">expand_more</span>
                               </div>
                             </div>
+                          </td>
+                          <td className="p-3">
+                            <input
+                              type="text"
+                              value={expense.notes || ""}
+                              onChange={(e) => handleUpdateExpense(index, 'notes', e.target.value)}
+                              className="w-full bg-surface-input text-white text-sm font-medium px-4 py-2.5 rounded-full border border-transparent focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder-[#a2c398]/50"
+                              placeholder="Catatan tambahan..."
+                            />
                           </td>
                           <td className="p-3">
                             <input
@@ -586,6 +670,69 @@ export default function QuickAdd() {
           )}
         </div>
       </main>
+
+      {/* Add Category Modal */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-dark border border-[#426039] rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Add New Category</h3>
+              <button
+                onClick={() => {
+                  setShowAddCategoryModal(false);
+                  setNewCategoryName("");
+                  setEditingExpenseIndex(null);
+                }}
+                className="size-8 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="category-name" className="block text-sm font-medium text-[#a2c398] mb-2">
+                  Category Name
+                </label>
+                <input
+                  id="category-name"
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddCategory();
+                    }
+                  }}
+                  placeholder="e.g., Pet Care, Education, Gifts..."
+                  className="w-full bg-surface-input text-white text-sm font-medium px-4 py-3 rounded-xl border border-[#426039] focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowAddCategoryModal(false);
+                    setNewCategoryName("");
+                    setEditingExpenseIndex(null);
+                  }}
+                  className="flex-1 h-11 px-6 rounded-full border border-[#426039] text-white hover:bg-white/5 font-bold text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddCategory}
+                  disabled={!newCategoryName.trim()}
+                  className="flex-1 h-11 px-6 rounded-full bg-primary hover:bg-primary/90 text-background-dark font-bold text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add Category
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

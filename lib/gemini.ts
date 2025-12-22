@@ -25,15 +25,34 @@ TUGAS:
 3. Dukung multiple transaksi dalam satu input
 4. Return JSON array dengan format yang konsisten
 
+ATURAN PENTING UNTUK FIELD "item":
+- Hanya tulis NAMA BARANG/JASA saja, BUKAN kalimat lengkap
+- HAPUS kata kerja seperti: "beli", "bayar", "makan", "buat", "isi"
+- HAPUS kata penghubung seperti: "untuk", "di", "ke", "dari"
+- Capitalize setiap kata (Title Case)
+
+CONTOH BENAR:
+- "beli ayam 10rb" → item: "Ayam"
+- "beli bensin 50rb" → item: "Bensin"
+- "makan siang 25rb" → item: "Makan Siang"
+- "bayar listrik 100rb" → item: "Listrik"
+- "beli dada ayam mentah 19rb" → item: "Dada Ayam Mentah"
+- "isi pulsa 20rb" → item: "Pulsa"
+
+CONTOH SALAH:
+❌ "beli ayam" → Terlalu panjang, hapus "beli"
+❌ "bayar untuk listrik" → Hapus "bayar untuk"
+❌ "makan di warteg" → Hapus "makan di", gunakan "Warteg"
+
 KATEGORI YANG TERSEDIA:
-- Food & Dining (makanan, makan siang, dinner, restaurant)
-- Groceries (belanja, pasar, supermarket, bahan makanan)
-- Transportation (transport, ojek, uber, bensin, parkir)
-- Utilities (listrik, air, internet, pulsa)
-- Entertainment (hiburan, bioskop, netflix, game)
-- Shopping (belanja barang, fashion, elektronik)
-- Healthcare (kesehatan, obat, dokter, rumah sakit)
-- Coffee & Cafe (kopi, cafe, starbucks)
+- Makanan & Minuman (makanan, makan siang, dinner, restaurant)
+- Belanjaan (belanja, pasar, supermarket, bahan makanan)
+- Transportasi (transport, ojek, uber, bensin, parkir)
+- Utilitas (listrik, air, internet, pulsa)
+- Hiburan (hiburan, bioskop, netflix, game)
+- Belanja (belanja barang, fashion, elektronik)
+- Kesehatan (kesehatan, obat, dokter, rumah sakit)
+- Kopi & Kafe (kopi, cafe, starbucks)
 
 TANGGAL:
 - "kemarin" = 1 hari yang lalu
@@ -54,13 +73,23 @@ CONFIDENCE SCORE:
 
 CONTOH INPUT & OUTPUT:
 
-Input: "beli dada ayam mentah 19 rb kemarin"
+Input: "beli ayam 10rb"
 Output:
 [{
-  "item": "Dada Ayam Mentah",
-  "amount": 19000,
-  "category": "Groceries",
-  "date": "2025-12-21",
+  "item": "Ayam",
+  "amount": 10000,
+  "category": "Belanjaan",
+  "date": "2025-12-22",
+  "confidence": 95
+}]
+
+Input: "beli bensin 50rb"
+Output:
+[{
+  "item": "Bensin",
+  "amount": 50000,
+  "category": "Transportasi",
+  "date": "2025-12-22",
   "confidence": 95
 }]
 
@@ -69,13 +98,13 @@ Output:
 [{
   "item": "Makan Siang",
   "amount": 35000,
-  "category": "Food & Dining",
+  "category": "Makanan & Minuman",
   "date": "2025-12-22",
   "confidence": 90
 }, {
   "item": "Kopi",
   "amount": 15000,
-  "category": "Coffee & Cafe",
+  "category": "Kopi & Kafe",
   "date": "2025-12-22",
   "confidence": 90
 }]
