@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 interface NavigationProps {
-  currentPage?: 'dashboard' | 'transactions' | 'history' | 'analytics';
+  currentPage?: 'dashboard' | 'transactions' | 'history' | 'analytics' | 'quick-add';
   variant?: 'default' | 'simple';
   showNotifications?: boolean;
 }
