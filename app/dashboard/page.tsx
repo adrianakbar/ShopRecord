@@ -48,10 +48,28 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const [naturalInput, setNaturalInput] = useState('');
-  const userName = 'Adrian';
+  const [userName, setUserName] = useState('User');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch user data
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const response = await fetch('/api/debug/user');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user?.name) {
+            setUserName(data.user.name);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err);
+      }
+    }
+    fetchUser();
+  }, []);
 
   // Fetch dashboard data
   useEffect(() => {

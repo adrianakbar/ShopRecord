@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface NavigationProps {
@@ -18,7 +18,27 @@ export default function Navigation({
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // Fetch current user data
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/debug/user');
+        if (response.ok) {
+          const data = await response.json();
+          setUser({
+            name: data.user?.name || 'User',
+            email: data.user?.email || 'user@example.com'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -201,56 +221,117 @@ export default function Navigation({
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile Menu Sidebar */}
         {showMobileMenu && (
-          <div className="md:hidden border-t border-gray-200 dark:border-border-dark bg-surface-light dark:bg-surface-dark">
-            <nav className="flex flex-col py-2">
-              <a
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  currentPage === 'dashboard'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-white hover:text-primary hover:bg-white/5'
-                }`}
-                href="/dashboard"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Dashboard
-              </a>
-              <a
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  currentPage === 'transactions'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-white hover:text-primary hover:bg-white/5'
-                }`}
-                href="/transactions"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Transactions
-              </a>
-              <a
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  currentPage === 'history'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-white hover:text-primary hover:bg-white/5'
-                }`}
-                href="/history"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                History
-              </a>
-              <a
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  currentPage === 'analytics'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-white hover:text-primary hover:bg-white/5'
-                }`}
-                href="/analytics"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Analytics
-              </a>
-            </nav>
-          </div>
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/70 z-[100] md:hidden"
+              onClick={() => setShowMobileMenu(false)}
+            />
+            
+            {/* Sidebar */}
+            <div 
+              className="fixed top-0 right-0 h-full w-72 border-l border-primary/20 shadow-2xl z-[101] md:hidden transform transition-transform duration-300 ease-out"
+              onClick={(e) => e.stopPropagation()}
+              style={{ backgroundColor: '#152211' }}
+            >
+              <div className="flex flex-col h-full" style={{ backgroundColor: '#152211' }}>
+                {/* Profile Section */}
+                <div className="p-6 border-b border-white/10" style={{ backgroundColor: '#152211' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-bold text-sm">Profile</h3>
+                    <button
+                      onClick={() => setShowMobileMenu(false)}
+                      className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-white text-[20px]">close</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="size-12 rounded-full bg-cover bg-center ring-2 ring-primary/30"
+                      style={{
+                        backgroundImage:
+                          'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTUru21QkcSZRx7Hlqbj0sGe8-w6sMYEO2aVkj-Iyn3dihsEaXWHMDPwFeW_DyOtGTOaUrrc2tF_JxiwHmdtcKriF8SE6NKWERf1c5_V_3hOyhj-pcK_jO-qfl8mZAW9IjdUFon43hxnoq45e-OJhCL5aeDnIrmVd85Ydvd1dkdd7LIy-RlhYY_eVnuG-VDZhAmBJCLQvDKvtGbNUBJnf6W-07mPpjqD03SGSHFX4xQ0CU_OzyP-o6Z5CN1EPzDjQBgU999s3KspI")',
+                      }}
+                    />
+                    <div>
+                      <p className="text-white font-semibold text-sm">{user?.name || 'Loading...'}</p>
+                      <p className="text-white/60 text-xs">{user?.email || ''}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="flex-1 flex flex-col py-4" style={{ backgroundColor: '#152211' }}>
+                  <a
+                    className={`px-6 py-4 text-sm font-medium transition-colors flex items-center gap-4 ${
+                      currentPage === 'dashboard'
+                        ? 'text-primary bg-primary/10 border-r-2 border-primary'
+                        : 'text-white hover:text-primary hover:bg-white/5'
+                    }`}
+                    href="/dashboard"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <span className="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                  </a>
+                  <a
+                    className={`px-6 py-4 text-sm font-medium transition-colors flex items-center gap-4 ${
+                      currentPage === 'transactions'
+                        ? 'text-primary bg-primary/10 border-r-2 border-primary'
+                        : 'text-white hover:text-primary hover:bg-white/5'
+                    }`}
+                    href="/transactions"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <span className="material-symbols-outlined">receipt_long</span>
+                    Transactions
+                  </a>
+                  <a
+                    className={`px-6 py-4 text-sm font-medium transition-colors flex items-center gap-4 ${
+                      currentPage === 'history'
+                        ? 'text-primary bg-primary/10 border-r-2 border-primary'
+                        : 'text-white hover:text-primary hover:bg-white/5'
+                    }`}
+                    href="/history"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <span className="material-symbols-outlined">history</span>
+                    History
+                  </a>
+                  <a
+                    className={`px-6 py-4 text-sm font-medium transition-colors flex items-center gap-4 ${
+                      currentPage === 'analytics'
+                        ? 'text-primary bg-primary/10 border-r-2 border-primary'
+                        : 'text-white hover:text-primary hover:bg-white/5'
+                    }`}
+                    href="/analytics"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <span className="material-symbols-outlined">analytics</span>
+                    Analytics
+                  </a>
+                </nav>
+
+                {/* Logout Button */}
+                <div className="p-4 border-t border-white/10" style={{ backgroundColor: '#152211' }}>
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      handleLogout();
+                    }}
+                    disabled={isLoggingOut}
+                    className="w-full px-6 py-4 text-left hover:bg-white/5 transition-colors flex items-center gap-4 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-red-400">logout</span>
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </nav>
