@@ -138,16 +138,17 @@ export async function GET(request: NextRequest) {
       percentage: Math.round((cat.amount / maxAmount) * 100),
     }));
 
-    // Get recent activity (last 10 expenses)
+    // Get recent activity (expenses from today only)
     const recentExpenses = await prisma.expense.findMany({
       where: {
         userId,
+        expenseDate: new Date(todayDateString),
       },
       include: {
         category: true,
       },
       orderBy: {
-        expenseDate: 'desc',
+        createdAt: 'desc',
       },
       take: 10,
     });

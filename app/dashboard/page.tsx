@@ -313,7 +313,7 @@ export default function DashboardPage() {
           {!loading && !error && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold dark:text-white">Aktivitas Terkini</h2>
+                <h2 className="text-xl font-bold dark:text-white">Pengeluaran Hari ini</h2>
                 <a href="/history" className="text-sm font-bold text-primary hover:text-primary-hover transition-colors">
                   Lihat Semua
                 </a>
