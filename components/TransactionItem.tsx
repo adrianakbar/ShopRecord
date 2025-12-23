@@ -53,29 +53,29 @@ export default function TransactionItem({
   return (
     <div
       onClick={onClick}
-      className={`group flex items-center justify-between p-4 rounded-xl bg-surface-dark/40 hover:bg-surface-dark transition-all border border-transparent hover:border-primary/20 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-dark/40 hover:bg-surface-dark transition-all border border-transparent hover:border-primary/20 gap-3 ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="size-10 rounded-full bg-[#1c2e18] group-hover:bg-primary flex items-center justify-center text-primary group-hover:text-[#1c2e18] shrink-0 transition-colors">
           <span className="material-symbols-outlined text-[20px]">
             {getIcon()}
           </span>
         </div>
-        <div className="flex flex-col">
-          <p className="text-white font-semibold text-sm">{transaction.item}</p>
+        <div className="flex flex-col flex-1 min-w-0">
+          <p className="text-white font-semibold text-sm truncate">{transaction.item}</p>
           <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span>{transaction.category?.name || 'Tanpa Kategori'}</span>
+            <span className="truncate">{transaction.category?.name || 'Tanpa Kategori'}</span>
             {transaction.notes && (
               <>
-                <span className="size-1 bg-gray-600 rounded-full"></span>
-                <span className="line-clamp-1">{transaction.notes}</span>
+                <span className="size-1 bg-gray-600 rounded-full shrink-0"></span>
+                <span className="line-clamp-1 flex-1 min-w-0">{transaction.notes}</span>
               </>
             )}
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="text-right">
+      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+        <div className="flex flex-col sm:text-right">
           <p className="text-white font-bold text-sm">
             {formatCurrency(transaction.amount)}
           </p>
@@ -86,7 +86,7 @@ export default function TransactionItem({
         {showDelete && onDelete && (
           <button
             onClick={handleDelete}
-            className=" text-gray-400 hover:text-red-400 transition-all p-2 hover:bg-red-500/10 rounded-lg"
+            className="text-gray-400 hover:text-red-400 transition-all p-2 hover:bg-red-500/10 rounded-lg shrink-0"
             aria-label="Delete transaction"
           >
             <span className="material-symbols-outlined text-[20px]">delete</span>

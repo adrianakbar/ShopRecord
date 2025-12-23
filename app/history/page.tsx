@@ -385,9 +385,9 @@ export default function HistoryPage() {
               </div>
 
               {/* Filter Buttons */}
-              <div className="flex gap-2 pb-2 md:pb-0" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide" onClick={(e) => e.stopPropagation()}>
                 {/* Month Filter */}
-                <div className="relative z-[100]">
+                <div className="relative z-[100] shrink-0">
                   <button 
                     onClick={() => {
                       setShowMonthDropdown(!showMonthDropdown);
@@ -437,7 +437,7 @@ export default function HistoryPage() {
                 </div>
 
                 {/* Category Filter */}
-                <div className="relative z-[100]">
+                <div className="relative z-[100] shrink-0">
                   <button 
                     onClick={() => {
                       setShowCategoryDropdown(!showCategoryDropdown);
@@ -487,7 +487,7 @@ export default function HistoryPage() {
                 </div>
 
                 {/* Price Range Filter */}
-                <div className="relative z-[100]">
+                <div className="relative z-[100] shrink-0">
                   <button 
                     onClick={() => {
                       setShowPriceDropdown(!showPriceDropdown);
