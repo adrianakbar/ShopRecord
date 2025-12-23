@@ -16,6 +16,7 @@ export default function Navigation({
   showNotifications = false 
 }: NavigationProps) {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
@@ -87,7 +88,10 @@ export default function Navigation({
   return (
     <nav 
       className="border-b border-gray-200 dark:border-border-dark bg-surface-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50"
-      onClick={() => setShowProfileDropdown(false)}
+      onClick={() => {
+        setShowProfileDropdown(false);
+        setShowMobileMenu(false);
+      }}
     >
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
@@ -183,11 +187,71 @@ export default function Navigation({
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button className="p-2 text-gray-500 hover:text-primary">
-              <span className="material-symbols-outlined">menu</span>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMobileMenu(!showMobileMenu);
+              }}
+              className="p-2 text-gray-500 hover:text-primary"
+            >
+              <span className="material-symbols-outlined">
+                {showMobileMenu ? 'close' : 'menu'}
+              </span>
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMobileMenu && (
+          <div className="md:hidden border-t border-gray-200 dark:border-border-dark bg-surface-light dark:bg-surface-dark">
+            <nav className="flex flex-col py-2">
+              <a
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  currentPage === 'dashboard'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white hover:text-primary hover:bg-white/5'
+                }`}
+                href="/dashboard"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Dashboard
+              </a>
+              <a
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  currentPage === 'transactions'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white hover:text-primary hover:bg-white/5'
+                }`}
+                href="/transactions"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Transactions
+              </a>
+              <a
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  currentPage === 'history'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white hover:text-primary hover:bg-white/5'
+                }`}
+                href="/history"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                History
+              </a>
+              <a
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  currentPage === 'analytics'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white hover:text-primary hover:bg-white/5'
+                }`}
+                href="/analytics"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Analytics
+              </a>
+            </nav>
+          </div>
+        )}
       </div>
     </nav>
   );
