@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GalaxyEffect from '@/components/GalaxyEffect';
+import TransactionItem from '@/components/TransactionItem';
 
 export default function Home() {
   const router = useRouter();
@@ -14,6 +15,36 @@ export default function Home() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Demo transactions for showcase
+  const demoTransactions = [
+    {
+      id: '1',
+      item: 'Ayam',
+      amount: 15000,
+      expenseDate: new Date().toISOString(),
+      notes: 'Beli di pasar',
+      category: {
+        id: '1',
+        name: 'Makanan & Minuman',
+        icon: 'restaurant',
+        color: '#53d22d',
+      },
+    },
+    {
+      id: '2',
+      item: 'Bensin',
+      amount: 50000,
+      expenseDate: new Date().toISOString(),
+      notes: 'Isi penuh',
+      category: {
+        id: '2',
+        name: 'Transportasi',
+        icon: 'local_gas_station',
+        color: '#5ea9e8',
+      },
+    },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,56 +149,16 @@ export default function Home() {
                 Processing...
               </div>
               
-              {/* AI Response Card */}
-              <div className="self-start w-full max-w-[85%] rounded-2xl rounded-tl-sm bg-gradient-to-br from-[#2e4328] to-[#253620] border border-[#426039] p-5 shadow-lg backdrop-blur-sm hover:shadow-primary/10 transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="size-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
-                    <span className="material-symbols-outlined text-2xl">fastfood</span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-white font-bold text-lg">Ayam</div>
-                        <div className="text-xs text-text-muted flex items-center gap-1 mt-1">
-                          <span className="material-symbols-outlined text-[10px]">schedule</span>
-                          Hari ini
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-black text-xl">-Rp15.000</div>
-                        <div className="text-xs text-red-400 font-medium">Pengeluaran</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-[#426039]/50">
-                      <span className="px-3 py-1.5 rounded-lg bg-[#152012] text-xs text-primary font-medium border border-primary/20">#Makanan</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="self-start w-full max-w-[85%] rounded-2xl rounded-tl-sm bg-gradient-to-br from-[#2e4328] to-[#253620] border border-[#426039] p-5 shadow-lg backdrop-blur-sm hover:shadow-primary/10 transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="size-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
-                    <span className="material-symbols-outlined text-2xl">transportation</span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-white font-bold text-lg">Bensin</div>
-                        <div className="text-xs text-text-muted flex items-center gap-1 mt-1">
-                          <span className="material-symbols-outlined text-[10px]">schedule</span>
-                          Hari ini
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-black text-xl">-Rp50.000</div>
-                        <div className="text-xs text-red-400 font-medium">Pengeluaran</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-[#426039]/50">
-                      <span className="px-3 py-1.5 rounded-lg bg-[#152012] text-xs text-primary font-medium border border-primary/20">#Transportasi</span>
-                    </div>
-                  </div>
-                </div>
+              {/* AI Response - Transaction Items */}
+              <div className="self-start w-full space-y-3">
+                {demoTransactions.map((transaction) => (
+                  <TransactionItem
+                    key={transaction.id}
+                    transaction={transaction}
+                    showTime={false}
+                    showDelete={false}
+                  />
+                ))}
               </div>
             </div>
 

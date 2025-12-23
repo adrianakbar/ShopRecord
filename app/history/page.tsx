@@ -41,10 +41,15 @@ interface Stats {
 
 export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const selectedMonth = 'Oct 2023';
-  const selectedCategory = 'All Categories';
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: Infinity });
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
   
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<Stats>({
     monthlyTotal: 0,
     monthlyCount: 0,
@@ -52,31 +57,74 @@ export default function HistoryPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch expenses from API
+  // Fetch expenses and categories from API
   useEffect(() => {
-    async function fetchExpenses() {
+    async function fetchData() {
       try {
         setLoading(true);
-        const response = await fetch('/api/expenses');
         
-        if (!response.ok) {
+        // Fetch expenses
+        const expensesResponse = await fetch('/api/expenses');
+        if (!expensesResponse.ok) {
           throw new Error('Failed to fetch expenses');
         }
+        const expensesData = await expensesResponse.json();
+        setExpenses(expensesData.expenses);
+        setStats(expensesData.stats);
         
-        const data = await response.json();
-        setExpenses(data.expenses);
-        setStats(data.stats);
+        // Fetch categories
+        const categoriesResponse = await fetch('/api/categories');
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData.categories || []);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching expenses:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchExpenses();
+    fetchData();
   }, []);
+
+  // Filter expenses based on search, month, category, and price range
+  const filteredExpenses = expenses.filter((expense) => {
+    // Search filter
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = 
+      searchQuery === '' ||
+      expense.item.toLowerCase().includes(searchLower) ||
+      expense.notes?.toLowerCase().includes(searchLower) ||
+      expense.category?.name.toLowerCase().includes(searchLower);
+    
+    // Month filter
+    const expenseDate = new Date(expense.expenseDate);
+    const matchesMonth = selectedMonth === 'all' || (() => {
+      const [year, month] = selectedMonth.split('-');
+      return expenseDate.getFullYear() === parseInt(year) && 
+             expenseDate.getMonth() === parseInt(month);
+    })();
+    
+    // Category filter
+    const matchesCategory = 
+      selectedCategory === 'all' || 
+      expense.category?.id === selectedCategory;
+    
+    // Price range filter
+    const matchesPrice = 
+      expense.amount >= priceRange.min && 
+      expense.amount <= priceRange.max;
+    
+    return matchesSearch && matchesMonth && matchesCategory && matchesPrice;
+  });
 
   // Group expenses by date
   const groupExpensesByDate = (expenses: ExpenseItem[]): ExpenseGroup[] => {
@@ -120,7 +168,58 @@ export default function HistoryPage() {
     });
   };
 
-  const expenseGroups = groupExpensesByDate(expenses);
+  const expenseGroups = groupExpensesByDate(filteredExpenses);
+
+  // Get available months from expenses
+  const availableMonths = Array.from(
+    new Set(
+      expenses.map((expense) => {
+        const date = new Date(expense.expenseDate);
+        return `${date.getFullYear()}-${date.getMonth()}`;
+      })
+    )
+  )
+    .sort((a, b) => {
+      const [yearA, monthA] = a.split('-').map(Number);
+      const [yearB, monthB] = b.split('-').map(Number);
+      return yearB * 12 + monthB - (yearA * 12 + monthA);
+    })
+    .map((key) => {
+      const [year, month] = key.split('-').map(Number);
+      const date = new Date(year, month);
+      return {
+        value: key,
+        label: date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
+      };
+    });
+
+  // Price range options
+  const priceRangeOptions = [
+    { label: 'Semua Harga', min: 0, max: Infinity },
+    { label: '< Rp 50.000', min: 0, max: 50000 },
+    { label: 'Rp 50.000 - Rp 100.000', min: 50000, max: 100000 },
+    { label: 'Rp 100.000 - Rp 500.000', min: 100000, max: 500000 },
+    { label: '> Rp 500.000', min: 500000, max: Infinity },
+  ];
+
+  const getMonthLabel = () => {
+    if (selectedMonth === 'all') return 'Semua Bulan';
+    const month = availableMonths.find(m => m.value === selectedMonth);
+    return month?.label || 'Pilih Bulan';
+  };
+
+  const getCategoryLabel = () => {
+    if (selectedCategory === 'all') return 'Semua Kategori';
+    const category = categories.find(c => c.id === selectedCategory);
+    return category?.name || 'Pilih Kategori';
+  };
+
+  const getPriceRangeLabel = () => {
+    const option = priceRangeOptions.find(
+      opt => opt.min === priceRange.min && opt.max === priceRange.max
+    );
+    return option?.label || 'Semua Harga';
+  };
 
   const handleDelete = async (expenseId: string) => {
     try {
@@ -140,8 +239,60 @@ export default function HistoryPage() {
     }
   };
 
+  const handleEditClick = (expense: ExpenseItem) => {
+    setEditingExpense(expense);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingExpense) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/expenses/${editingExpense.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          item: editingExpense.item,
+          amount: editingExpense.amount,
+          categoryId: editingExpense.category?.id || null,
+          expenseDate: editingExpense.expenseDate,
+          notes: editingExpense.notes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update expense');
+      }
+
+      const updatedExpense = await response.json();
+
+      // Update expense in state
+      setExpenses((prevExpenses) =>
+        prevExpenses.map((exp) => (exp.id === editingExpense.id ? updatedExpense.expense : exp))
+      );
+
+      setShowEditModal(false);
+      setEditingExpense(null);
+    } catch (err) {
+      console.error('Error updating expense:', err);
+      alert('Gagal memperbarui pengeluaran. Silakan coba lagi.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
+    <div 
+      className="min-h-screen bg-background-light dark:bg-background-dark"
+      onClick={() => {
+        setShowMonthDropdown(false);
+        setShowCategoryDropdown(false);
+        setShowPriceDropdown(false);
+      }}
+    >
       <GalaxyEffect />
       <Navigation variant="default" currentPage="history" />
       
@@ -220,7 +371,7 @@ export default function HistoryPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-3">
               {/* Search Input */}
-              <div className="flex-1 relative group">
+              <div className="flex-1 relative group" onClick={(e) => e.stopPropagation()}>
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
                   <span className="material-symbols-outlined">search</span>
                 </div>
@@ -234,36 +385,147 @@ export default function HistoryPage() {
               </div>
 
               {/* Filter Buttons */}
-              <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                <button className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10">
-                  <span className="material-symbols-outlined text-gray-400 text-[20px]">
-                    calendar_month
-                  </span>
-                  <span className="text-sm font-medium">{selectedMonth}</span>
-                  <span className="material-symbols-outlined text-gray-500 text-[16px]">
-                    arrow_drop_down
-                  </span>
-                </button>
+              <div className="flex gap-2 pb-2 md:pb-0" onClick={(e) => e.stopPropagation()}>
+                {/* Month Filter */}
+                <div className="relative z-[100]">
+                  <button 
+                    onClick={() => {
+                      setShowMonthDropdown(!showMonthDropdown);
+                      setShowCategoryDropdown(false);
+                      setShowPriceDropdown(false);
+                    }}
+                    className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10"
+                  >
+                    <span className="material-symbols-outlined text-gray-400 text-[20px]">
+                      calendar_month
+                    </span>
+                    <span className="text-sm font-medium">{getMonthLabel()}</span>
+                    <span className="material-symbols-outlined text-gray-500 text-[16px]">
+                      arrow_drop_down
+                    </span>
+                  </button>
+                  
+                  {showMonthDropdown && (
+                    <div className="absolute top-14 left-0 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-[100] min-w-[200px] max-h-[300px] overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedMonth('all');
+                          setShowMonthDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/5 transition-colors ${
+                          selectedMonth === 'all' ? 'text-primary' : 'text-white'
+                        }`}
+                      >
+                        Semua Bulan
+                      </button>
+                      {availableMonths.map((month) => (
+                        <button
+                          key={month.value}
+                          onClick={() => {
+                            setSelectedMonth(month.value);
+                            setShowMonthDropdown(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-white/5 transition-colors ${
+                            selectedMonth === month.value ? 'text-primary' : 'text-white'
+                          }`}
+                        >
+                          {month.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                <button className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10">
-                  <span className="material-symbols-outlined text-gray-400 text-[20px]">
-                    category
-                  </span>
-                  <span className="text-sm font-medium">{selectedCategory}</span>
-                  <span className="material-symbols-outlined text-gray-500 text-[16px]">
-                    arrow_drop_down
-                  </span>
-                </button>
+                {/* Category Filter */}
+                <div className="relative z-[100]">
+                  <button 
+                    onClick={() => {
+                      setShowCategoryDropdown(!showCategoryDropdown);
+                      setShowMonthDropdown(false);
+                      setShowPriceDropdown(false);
+                    }}
+                    className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10"
+                  >
+                    <span className="material-symbols-outlined text-gray-400 text-[20px]">
+                      category
+                    </span>
+                    <span className="text-sm font-medium">{getCategoryLabel()}</span>
+                    <span className="material-symbols-outlined text-gray-500 text-[16px]">
+                      arrow_drop_down
+                    </span>
+                  </button>
+                  
+                  {showCategoryDropdown && (
+                    <div className="absolute top-14 left-0 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-[100] min-w-[200px] max-h-[300px] overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('all');
+                          setShowCategoryDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/5 transition-colors ${
+                          selectedCategory === 'all' ? 'text-primary' : 'text-white'
+                        }`}
+                      >
+                        Semua Kategori
+                      </button>
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            setSelectedCategory(category.id);
+                            setShowCategoryDropdown(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-white/5 transition-colors flex items-center gap-2 ${
+                            selectedCategory === category.id ? 'text-primary' : 'text-white'
+                          }`}
+                        >
+                          <span>{category.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                <button className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10">
-                  <span className="material-symbols-outlined text-gray-400 text-[20px]">
-                    attach_money
-                  </span>
-                  <span className="text-sm font-medium">Price Range</span>
-                  <span className="material-symbols-outlined text-gray-500 text-[16px]">
-                    arrow_drop_down
-                  </span>
-                </button>
+                {/* Price Range Filter */}
+                <div className="relative z-[100]">
+                  <button 
+                    onClick={() => {
+                      setShowPriceDropdown(!showPriceDropdown);
+                      setShowMonthDropdown(false);
+                      setShowCategoryDropdown(false);
+                    }}
+                    className="h-12 px-4 bg-surface-dark hover:bg-white/10 rounded-xl flex items-center gap-2 text-white whitespace-nowrap transition-colors border border-transparent hover:border-white/10"
+                  >
+                    <span className="material-symbols-outlined text-gray-400 text-[20px]">
+                      attach_money
+                    </span>
+                    <span className="text-sm font-medium">{getPriceRangeLabel()}</span>
+                    <span className="material-symbols-outlined text-gray-500 text-[16px]">
+                      arrow_drop_down
+                    </span>
+                  </button>
+                  
+                  {showPriceDropdown && (
+                    <div className="absolute top-14 right-0 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-[100] min-w-[240px]">
+                      {priceRangeOptions.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setPriceRange({ min: option.min, max: option.max });
+                            setShowPriceDropdown(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-white/5 transition-colors ${
+                            priceRange.min === option.min && priceRange.max === option.max
+                              ? 'text-primary'
+                              : 'text-white'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -286,7 +548,13 @@ export default function HistoryPage() {
 
                   {/* Expense Items */}
                   {group.expenses.map((expense) => (
-                    <TransactionItem key={expense.id} transaction={expense} showDelete={true} onDelete={handleDelete} />
+                    <TransactionItem 
+                      key={expense.id} 
+                      transaction={expense} 
+                      showDelete={true} 
+                      onDelete={handleDelete}
+                      onClick={() => handleEditClick(expense)}
+                    />
                   ))}
                 </div>
               ))}
@@ -318,6 +586,144 @@ export default function HistoryPage() {
 
       {/* Floating Action Button */}
       <FloatingActionButton />
+
+      {/* Edit Modal */}
+      {showEditModal && editingExpense && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-surface-dark border border-white/10 rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white">Edit Pengeluaran</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingExpense(null);
+                }}
+                className="size-10 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              {/* Item Name */}
+              <div>
+                <label htmlFor="edit-item" className="block text-sm font-medium text-gray-400 mb-2">
+                  Nama Item
+                </label>
+                <input
+                  id="edit-item"
+                  type="text"
+                  value={editingExpense.item}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, item: e.target.value })}
+                  placeholder="Contoh: Kopi Starbucks, Bensin, dll"
+                  className="w-full bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                />
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label htmlFor="edit-amount" className="block text-sm font-medium text-gray-400 mb-2">
+                  Jumlah
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                  <input
+                    id="edit-amount"
+                    type="number"
+                    value={editingExpense.amount}
+                    onChange={(e) => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="w-full bg-surface-input text-white text-base font-medium pl-12 pr-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                    step="1000"
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label htmlFor="edit-category" className="block text-sm font-medium text-gray-400 mb-2">
+                  Kategori
+                </label>
+                <select
+                  id="edit-category"
+                  value={editingExpense.category?.id || ''}
+                  onChange={(e) => {
+                    const selectedCategory = categories.find(c => c.id === e.target.value);
+                    setEditingExpense({ ...editingExpense, category: selectedCategory || null });
+                  }}
+                  className="w-full appearance-none bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                >
+                  <option value="">Pilih Kategori</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label htmlFor="edit-date" className="block text-sm font-medium text-gray-400 mb-2">
+                  Tanggal
+                </label>
+                <input
+                  id="edit-date"
+                  type="date"
+                  value={editingExpense.expenseDate.split('T')[0]}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, expenseDate: e.target.value })}
+                  className="w-full bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label htmlFor="edit-notes" className="block text-sm font-medium text-gray-400 mb-2">
+                  Catatan (Opsional)
+                </label>
+                <textarea
+                  id="edit-notes"
+                  value={editingExpense.notes || ''}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, notes: e.target.value })}
+                  placeholder="Tambahkan catatan tambahan..."
+                  rows={3}
+                  className="w-full bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all resize-none"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingExpense(null);
+                  }}
+                  className="flex-1 h-12 px-6 rounded-xl border border-white/10 text-white hover:bg-white/5 font-bold text-base transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isSaving || !editingExpense.item || editingExpense.amount <= 0}
+                  className="flex-1 h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-background-dark font-bold text-base shadow-lg shadow-primary/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined">check</span>
+                      <span>Simpan Perubahan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

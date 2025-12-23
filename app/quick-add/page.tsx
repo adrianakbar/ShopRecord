@@ -2,7 +2,7 @@
 
 import Navigation from "@/components/Navigation";
 import GalaxyEffect from "@/components/GalaxyEffect";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ParsedExpense {
   item: string;
@@ -11,6 +11,18 @@ interface ParsedExpense {
   date: string;
   confidence: number;
   notes?: string;
+}
+
+interface RecentExpense {
+  id: string;
+  item: string;
+  amount: number;
+  expenseDate: string;
+  category: {
+    name: string;
+    icon: string | null;
+    color: string | null;
+  } | null;
 }
 
 interface ParseResponse {
@@ -59,8 +71,30 @@ export default function QuickAdd() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingExpenseIndex, setEditingExpenseIndex] = useState<number | null>(null);
+  const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
 
   const allCategories = [...CATEGORIES, ...customCategories];
+
+  // Fetch recent expenses
+  useEffect(() => {
+    async function fetchRecentExpenses() {
+      try {
+        setLoadingRecent(true);
+        const response = await fetch('/api/expenses?limit=3');
+        if (response.ok) {
+          const data = await response.json();
+          setRecentExpenses(data.expenses?.slice(0, 3) || []);
+        }
+      } catch (err) {
+        console.error('Error fetching recent expenses:', err);
+      } finally {
+        setLoadingRecent(false);
+      }
+    }
+
+    fetchRecentExpenses();
+  }, []);
 
   const handleProcess = async () => {
     if (!inputText.trim()) return;
@@ -157,6 +191,13 @@ export default function QuickAdd() {
       // Success - clear form
       setParsedExpenses([]);
       setInputText("");
+      
+      // Refresh recent expenses
+      const recentResponse = await fetch('/api/expenses?limit=3');
+      if (recentResponse.ok) {
+        const recentData = await recentResponse.json();
+        setRecentExpenses(recentData.expenses?.slice(0, 3) || []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save expenses");
     } finally {
@@ -198,6 +239,42 @@ export default function QuickAdd() {
   const avgConfidence = parsedExpenses.length > 0 
     ? parsedExpenses.reduce((sum, exp) => sum + normalizeConfidence(exp.confidence), 0) / parsedExpenses.length 
     : 0;
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
+  // Get icon for category
+  const getCategoryIconForExpense = (category: { name: string; icon: string | null } | null) => {
+    if (category?.icon) return category.icon;
+    if (category?.name) {
+      const cat = CATEGORIES.find(c => c.value.toLowerCase() === category.name.toLowerCase());
+      return cat?.icon || "payments";
+    }
+    return "payments";
+  };
+
+  // Get color for category
+  const getCategoryColorForExpense = (category: { name: string; color: string | null } | null) => {
+    if (category?.color) return category.color;
+    if (category?.name) {
+      const cat = CATEGORIES.find(c => c.value.toLowerCase() === category.name.toLowerCase());
+      return cat?.color || "primary";
+    }
+    return "primary";
+  };
 
   return (
     <>
@@ -325,78 +402,51 @@ export default function QuickAdd() {
                   </h3>
                   <a
                     className="text-xs font-bold text-primary hover:underline uppercase tracking-wider"
-                    href="#"
+                    href="/history"
                   >
                     View All
                   </a>
                 </div>
 
                 <div className="space-y-4">
-                  {/* Item 1 */}
-                  <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                        <span className="material-symbols-outlined">
-                          local_cafe
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm dark:text-gray-200">
-                          Starbucks Coffee
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Food &amp; Drink • Today
-                        </span>
-                      </div>
+                  {loadingRecent ? (
+                    <div className="flex items-center justify-center py-8 text-gray-400">
+                      <span className="text-sm">Loading...</span>
                     </div>
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      -$5.40
-                    </span>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center">
-                        <span className="material-symbols-outlined">
-                          local_taxi
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm dark:text-gray-200">
-                          Uber Trip
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Transport • Yesterday
-                        </span>
-                      </div>
+                  ) : recentExpenses.length > 0 ? (
+                    recentExpenses.map((expense) => {
+                      const categoryIcon = getCategoryIconForExpense(expense.category);
+                      const categoryColor = getCategoryColorForExpense(expense.category);
+                      
+                      return (
+                        <div key={expense.id} className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className={`size-10 rounded-full bg-${categoryColor}/10 text-${categoryColor} flex items-center justify-center`}>
+                              <span className="material-symbols-outlined">
+                                {categoryIcon}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-sm dark:text-gray-200">
+                                {expense.item}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {expense.category?.name || 'Uncategorized'} • {formatDate(expense.expenseDate)}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            -Rp {expense.amount.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                      <span className="material-symbols-outlined text-4xl mb-2 opacity-30">receipt_long</span>
+                      <span className="text-sm">No recent expenses</span>
                     </div>
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      -$24.50
-                    </span>
-                  </div>
-
-                  {/* Item 3 */}
-                  <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center">
-                        <span className="material-symbols-outlined">
-                          shopping_bag
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm dark:text-gray-200">
-                          Apple Store
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Electronics • Oct 24
-                        </span>
-                      </div>
-                    </div>
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      -$129.00
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -10,28 +10,37 @@ export async function GET(request: NextRequest) {
     // Development mode: use mock user if not authenticated
     const userId = user?.id || '00000000-0000-0000-0000-000000000001';
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get today's date range (local timezone)
+    const now = new Date();
+    const todayDateString = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayDateString = yesterdayDate.toISOString().split('T')[0];
 
     // Get current month's date range
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     // Get last month's date range for comparison
-    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Fetch today's expenses
+    // Fetch today's expenses (comparing date only)
     const todayExpenses = await prisma.expense.findMany({
       where: {
         userId,
-        expenseDate: {
-          gte: today,
-          lt: tomorrow,
-        },
+        expenseDate: new Date(todayDateString),
+      },
+      select: {
+        amount: true,
+      },
+    });
+
+    // Fetch yesterday's expenses for trend calculation
+    const yesterdayExpenses = await prisma.expense.findMany({
+      where: {
+        userId,
+        expenseDate: new Date(yesterdayDateString),
       },
       select: {
         amount: true,
@@ -68,10 +77,15 @@ export async function GET(request: NextRequest) {
 
     // Calculate totals
     const todayTotal = todayExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    const yesterdayTotal = yesterdayExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
     const thisMonthTotal = thisMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
     const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
     // Calculate trends
+    const todayTrend = yesterdayTotal > 0
+      ? Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100)
+      : 0;
+      
     const monthlyTrend = lastMonthTotal > 0 
       ? Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100)
       : 0;
@@ -157,7 +171,7 @@ export async function GET(request: NextRequest) {
       stats: {
         today: {
           total: todayTotal,
-          trend: 0, // Could calculate based on yesterday if needed
+          trend: todayTrend,
         },
         monthly: {
           total: thisMonthTotal,

@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface NavigationProps {
   currentPage?: 'dashboard' | 'transactions' | 'history' | 'analytics' | 'quick-add';
@@ -13,6 +15,30 @@ export default function Navigation({
   variant = 'default',
   showNotifications = false 
 }: NavigationProps) {
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Redirect to home or login page
+        router.push('/');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+      setShowProfileDropdown(false);
+    }
+  };
   if (variant === 'simple') {
     return (
       <div className="w-full border-b border-border-dark bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
@@ -29,13 +55,29 @@ export default function Navigation({
                 <span className="material-symbols-outlined">notifications</span>
               </button>
             )}
-            <div 
-              className="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-primary/30" 
-              style={{
-                backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTUru21QkcSZRx7Hlqbj0sGe8-w6sMYEO2aVkj-Iyn3dihsEaXWHMDPwFeW_DyOtGTOaUrrc2tF_JxiwHmdtcKriF8SE6NKWERf1c5_V_3hOyhj-pcK_jO-qfl8mZAW9IjdUFon43hxnoq45e-OJhCL5aeDnIrmVd85Ydvd1dkdd7LIy-RlhYY_eVnuG-VDZhAmBJCLQvDKvtGbNUBJnf6W-07mPpjqD03SGSHFX4xQ0CU_OzyP-o6Z5CN1EPzDjQBgU999s3KspI")'
-              }}
-              aria-label="User profile picture showing a smiling person"
-            />
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" 
+                style={{
+                  backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTUru21QkcSZRx7Hlqbj0sGe8-w6sMYEO2aVkj-Iyn3dihsEaXWHMDPwFeW_DyOtGTOaUrrc2tF_JxiwHmdtcKriF8SE6NKWERf1c5_V_3hOyhj-pcK_jO-qfl8mZAW9IjdUFon43hxnoq45e-OJhCL5aeDnIrmVd85Ydvd1dkdd7LIy-RlhYY_eVnuG-VDZhAmBJCLQvDKvtGbNUBJnf6W-07mPpjqD03SGSHFX4xQ0CU_OzyP-o6Z5CN1EPzDjQBgU999s3KspI")'
+                }}
+                aria-label="User profile picture"
+              />
+              
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden">
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors flex items-center gap-3 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-red-400">logout</span>
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -43,7 +85,10 @@ export default function Navigation({
   }
 
   return (
-    <nav className="border-b border-gray-200 dark:border-border-dark bg-surface-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+    <nav 
+      className="border-b border-gray-200 dark:border-border-dark bg-surface-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50"
+      onClick={() => setShowProfileDropdown(false)}
+    >
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -104,15 +149,35 @@ export default function Navigation({
             </nav>
 
             {/* Profile */}
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-border-dark">
-              <div
-                className="size-9 rounded-full bg-cover bg-center ring-2 ring-primary/20"
+            <div className="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-border-dark relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowProfileDropdown(!showProfileDropdown);
+                }}
+                className="size-9 rounded-full bg-cover bg-center ring-2 ring-primary/20 hover:ring-primary/40 transition-all cursor-pointer"
                 style={{
                   backgroundImage:
                     'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTUru21QkcSZRx7Hlqbj0sGe8-w6sMYEO2aVkj-Iyn3dihsEaXWHMDPwFeW_DyOtGTOaUrrc2tF_JxiwHmdtcKriF8SE6NKWERf1c5_V_3hOyhj-pcK_jO-qfl8mZAW9IjdUFon43hxnoq45e-OJhCL5aeDnIrmVd85Ydvd1dkdd7LIy-RlhYY_eVnuG-VDZhAmBJCLQvDKvtGbNUBJnf6W-07mPpjqD03SGSHFX4xQ0CU_OzyP-o6Z5CN1EPzDjQBgU999s3KspI")',
                 }}
-                aria-label="User profile avatar showing a smiling person"
+                aria-label="User profile avatar"
               />
+
+              {showProfileDropdown && (
+                <div 
+                  className="absolute right-0 top-12 w-48 bg-surface-dark border border-white/10 rounded-xl shadow-xl z-[200] overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors flex items-center gap-3 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-red-400">logout</span>
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
