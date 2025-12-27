@@ -9,8 +9,12 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "ExpenseAI - Login",
+  title: "ShopRecord",
   description: "AI-powered expense tracking for the modern spender",
+  icons: {
+    icon: '/shoprecord.svg',
+    
+  },
 };
 
 export default function RootLayout({
