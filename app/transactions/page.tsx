@@ -5,6 +5,8 @@ import Navigation from '@/components/Navigation';
 import TransactionItem from '@/components/TransactionItem';
 import { DEFAULT_CATEGORIES } from '@/lib/constants';
 import GalaxyEffect from '@/components/GalaxyEffect';
+import Popup, { PopupType } from '@/components/Popup';
+
 
 interface Category {
   id: string;
@@ -32,10 +34,11 @@ export default function TransactionsPage() {
   
   // UI state
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  
+  // Toast notification state
+  const [popup, setPopup] = useState<{ message: string; type: PopupType } | null>(null);
 
   // Fetch recent transactions
   useEffect(() => {
@@ -65,30 +68,28 @@ export default function TransactionsPage() {
     
     // Validation
     if (!item.trim()) {
-      setSaveError('Nama item harus diisi');
+      setPopup({ message: 'Nama item harus diisi', type: 'error' });
       return;
     }
     
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      setSaveError('Jumlah harus diisi dengan angka yang valid');
+      setPopup({ message: 'Jumlah harus diisi dengan angka yang valid', type: 'error' });
       return;
     }
     
     if (!category) {
-      setSaveError('Kategori harus dipilih');
+      setPopup({ message: 'Kategori harus dipilih', type: 'error' });
       return;
     }
     
     if (!date) {
-      setSaveError('Tanggal harus dipilih');
+      setPopup({ message: 'Tanggal harus dipilih', type: 'error' });
       return;
     }
 
     try {
       setIsSaving(true);
-      setSaveError(null);
-      setSaveSuccess(false);
 
       const expense = {
         item: item.trim(),
@@ -119,17 +120,16 @@ export default function TransactionsPage() {
       setDate(new Date().toISOString().split('T')[0]);
       setNotes('');
       
-      setSaveSuccess(true);
+      // Show success toast
+      setPopup({ message: 'Transaksi berhasil disimpan', type: 'success' });
       
       // Refresh transactions list
       await fetchTransactions();
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      setPopup({ 
+        message: err instanceof Error ? err.message : 'Terjadi kesalahan', 
+        type: 'error' 
+      });
       console.error('Error saving transaction:', err);
     } finally {
       setIsSaving(false);
@@ -264,22 +264,6 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            {/* Success Message */}
-            {saveSuccess && (
-              <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 text-primary animate-in fade-in slide-in-from-top-2 duration-300">
-                <span className="material-symbols-outlined">check_circle</span>
-                <span className="font-medium">Transaksi berhasil disimpan!</span>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {saveError && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
-                <span className="material-symbols-outlined">error</span>
-                <span className="font-medium">{saveError}</span>
-              </div>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -332,6 +316,15 @@ export default function TransactionsPage() {
           </div>
         </div>
       </main>
+      
+      {/* Toast Notification */}
+      {popup && (
+        <Popup
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup(null)}
+        />
+      )}
     </div>
   );
 }

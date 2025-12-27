@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation';
 import FloatingActionButton from '@/components/FloatingActionButton';
 import TransactionItem from '@/components/TransactionItem';
 import GalaxyEffect from '@/components/GalaxyEffect';
+import Popup, { PopupType } from '@/components/Popup';
 
 // Type definitions
 interface Category {
@@ -62,6 +63,9 @@ export default function HistoryPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Toast notification state
+  const [popup, setPopup] = useState<{ message: string; type: PopupType } | null>(null);
 
   // Fetch expenses and categories from API
   useEffect(() => {
@@ -233,9 +237,12 @@ export default function HistoryPage() {
 
       // Remove deleted expense from state
       setExpenses((prevExpenses) => prevExpenses.filter(exp => exp.id !== expenseId));
+      
+      // Show success popup
+      setPopup({ message: 'Pengeluaran berhasil dihapus', type: 'success' });
     } catch (err) {
       console.error('Error deleting expense:', err);
-      alert('Gagal menghapus pengeluaran. Silakan coba lagi.');
+      setPopup({ message: 'Gagal menghapus pengeluaran. Silakan coba lagi.', type: 'error' });
     }
   };
 
@@ -276,9 +283,12 @@ export default function HistoryPage() {
 
       setShowEditModal(false);
       setEditingExpense(null);
+      
+      // Show success popup
+      setPopup({ message: 'Pengeluaran berhasil diperbarui', type: 'success' });
     } catch (err) {
       console.error('Error updating expense:', err);
-      alert('Gagal memperbarui pengeluaran. Silakan coba lagi.');
+      setPopup({ message: 'Gagal memperbarui pengeluaran. Silakan coba lagi.', type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -586,6 +596,15 @@ export default function HistoryPage() {
 
       {/* Floating Action Button */}
       <FloatingActionButton />
+
+      {/* Toast Notification */}
+      {popup && (
+        <Popup
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup(null)}
+        />
+      )}
 
       {/* Edit Modal */}
       {showEditModal && editingExpense && (
