@@ -1,88 +1,43 @@
 import prisma from '../lib/prisma';
+import { config } from 'dotenv';
+import { SYSTEM_USER_ID, DEFAULT_CATEGORIES } from '../lib/constants';
 
-// This is a mock user ID - replace with actual user ID from Supabase Auth
-const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001';
+config({ path: '.env.local' });
+
+// Get user ID from environment variable or use mock
+const USER_ID = process.env.USER_ID || '00000000-0000-0000-0000-000000000001';
 
 async function main() {
   console.log('🌱 Starting seed...');
-
-  // Clean existing data for the mock user (optional - for development)
-  await prisma.expense.deleteMany({ where: { userId: MOCK_USER_ID } });
-  await prisma.category.deleteMany({ where: { userId: MOCK_USER_ID } });
   
-  console.log('🗑️  Cleaned existing data');
+  // 1. Clean and create SYSTEM categories (global/default categories)
+  console.log('📦 Setting up system categories...');
+  await prisma.category.deleteMany({ where: { userId: SYSTEM_USER_ID } });
+  
+  const systemCategories = await Promise.all(
+    DEFAULT_CATEGORIES.map(cat => 
+      prisma.category.create({
+        data: {
+          userId: SYSTEM_USER_ID,
+          name: cat.name,
+          icon: cat.icon,
+          color: cat.color,
+        },
+      })
+    )
+  );
+  
+  console.log(`✅ Created ${systemCategories.length} system categories`);
 
-  // Create Categories
-  const categories = await Promise.all([
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Food & Dining',
-        icon: 'restaurant',
-        color: '#FF6B6B',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Groceries',
-        icon: 'shopping_cart',
-        color: '#4ECDC4',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Transportation',
-        icon: 'directions_car',
-        color: '#95E1D3',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Utilities',
-        icon: 'receipt_long',
-        color: '#F38181',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Entertainment',
-        icon: 'movie',
-        color: '#AA96DA',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Shopping',
-        icon: 'shopping_bag',
-        color: '#FCBAD3',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Healthcare',
-        icon: 'local_hospital',
-        color: '#FFFFD2',
-      },
-    }),
-    prisma.category.create({
-      data: {
-        userId: MOCK_USER_ID,
-        name: 'Coffee & Cafe',
-        icon: 'local_cafe',
-        color: '#A8DADC',
-      },
-    }),
-  ]);
+  // 2. Clean existing data for demo user
+  console.log(`\n🌱 Seeding data for user: ${USER_ID}`);
+  await prisma.expense.deleteMany({ where: { userId: USER_ID } });
+  await prisma.category.deleteMany({ where: { userId: USER_ID } });
+  
+  console.log('🗑️  Cleaned existing user data');
 
-  console.log('✅ Created categories');
-
-  // Helper to get date
+  // 3. Create demo expenses using system categories
+  // Helper to get dates
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -95,28 +50,27 @@ async function main() {
   const twoWeeksAgo = new Date(today);
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-  // Create Expenses
   const expenses = [
     // Today's expenses
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Coffee & Cafe')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Starbucks Coffee',
       amount: 5.50,
       expenseDate: today,
       notes: 'Grande Caramel Macchiato - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Groceries')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Whole Foods Market',
       amount: 39.50,
       expenseDate: today,
       notes: 'Weekly groceries - Apple Pay',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Makan Harian')?.id,
       item: 'Lunch at Chipotle',
       amount: 12.75,
       expenseDate: today,
@@ -125,24 +79,16 @@ async function main() {
 
     // Yesterday's expenses
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Uber Trip',
       amount: 25.00,
       expenseDate: yesterday,
       notes: 'Home to office - MasterCard •••• 8812',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Utilities')?.id,
-      item: 'Electric Bill',
-      amount: 95.00,
-      expenseDate: yesterday,
-      notes: 'Monthly electric bill - Bank Transfer',
-    },
-    {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Makan Harian')?.id,
       item: 'Pizza Hut Dinner',
       amount: 28.50,
       expenseDate: yesterday,
@@ -151,16 +97,16 @@ async function main() {
 
     // 3 days ago
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Entertainment')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Hiburan')?.id,
       item: 'Netflix Subscription',
       amount: 12.99,
       expenseDate: threeDaysAgo,
       notes: 'Monthly subscription - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Coffee & Cafe')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Kopi & Kafe')?.id,
       item: 'Dunkin Donuts',
       amount: 8.25,
       expenseDate: threeDaysAgo,
@@ -169,24 +115,24 @@ async function main() {
 
     // 5 days ago
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Shopping')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Amazon Purchase',
       amount: 45.99,
       expenseDate: fiveDaysAgo,
       notes: 'Books and office supplies - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Gas Station',
       amount: 52.00,
       expenseDate: fiveDaysAgo,
       notes: 'Shell gas station - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Makan Harian')?.id,
       item: 'Sushi Restaurant',
       amount: 65.00,
       expenseDate: fiveDaysAgo,
@@ -195,24 +141,24 @@ async function main() {
 
     // 1 week ago
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Healthcare')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Kesehatan')?.id,
       item: 'Pharmacy - CVS',
       amount: 23.50,
       expenseDate: oneWeekAgo,
       notes: 'Prescription medication - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Groceries')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Walmart Groceries',
       amount: 78.25,
       expenseDate: oneWeekAgo,
       notes: 'Weekly shopping - Debit Card',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Entertainment')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Hiburan')?.id,
       item: 'Movie Tickets',
       amount: 32.00,
       expenseDate: oneWeekAgo,
@@ -221,24 +167,24 @@ async function main() {
 
     // 2 weeks ago
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Shopping')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Belanja')?.id,
       item: 'Target Shopping',
       amount: 125.50,
       expenseDate: twoWeeksAgo,
       notes: 'Household items - MasterCard •••• 8812',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Food & Dining')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Makan Harian')?.id,
       item: 'Olive Garden',
       amount: 48.75,
       expenseDate: twoWeeksAgo,
       notes: 'Lunch meeting - Visa •••• 4242',
     },
     {
-      userId: MOCK_USER_ID,
-      categoryId: categories.find(c => c.name === 'Transportation')?.id,
+      userId: USER_ID,
+      categoryId: systemCategories.find(c => c.name === 'Transportasi')?.id,
       item: 'Lyft Ride',
       amount: 18.50,
       expenseDate: twoWeeksAgo,
@@ -250,14 +196,17 @@ async function main() {
     data: expenses,
   });
 
-  console.log('✅ Created expenses');
+  console.log(`✅ Created ${expenses.length} demo expenses`);
 
   // Get stats
-  const expenseCount = await prisma.expense.count({ where: { userId: MOCK_USER_ID } });
-  const categoryCount = await prisma.category.count({ where: { userId: MOCK_USER_ID } });
+  const systemCategoryCount = await prisma.category.count({ where: { userId: SYSTEM_USER_ID } });
+  const userCategoryCount = await prisma.category.count({ where: { userId: USER_ID } });
+  const expenseCount = await prisma.expense.count({ where: { userId: USER_ID } });
 
   console.log(`\n📊 Seed Summary:`);
-  console.log(`   Categories: ${categoryCount}`);
+  console.log(`   System Categories: ${systemCategoryCount} (global)`);
+  console.log(`   User ID: ${USER_ID}`);
+  console.log(`   User Categories: ${userCategoryCount}`);
   console.log(`   Expenses: ${expenseCount}`);
   console.log(`\n✨ Seed completed successfully!`);
 }

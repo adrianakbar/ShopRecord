@@ -648,14 +648,19 @@ export default function HistoryPage() {
                   id="edit-category"
                   value={editingExpense.category?.id || ''}
                   onChange={(e) => {
-                    const selectedCategory = categories.find(c => c.id === e.target.value);
-                    setEditingExpense({ ...editingExpense, category: selectedCategory || null });
+                    const categoryId = e.target.value;
+                    if (categoryId) {
+                      const selectedCategory = categories.find(c => c.id === categoryId);
+                      setEditingExpense({ ...editingExpense, category: selectedCategory || null });
+                    } else {
+                      setEditingExpense({ ...editingExpense, category: null });
+                    }
                   }}
                   className="w-full appearance-none bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
                 >
                   <option value="">Pilih Kategori</option>
                   {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
+                    <option key={category.id} value={category.id} className='bg-surface-dark'>
                       {category.name}
                     </option>
                   ))}
@@ -671,7 +676,12 @@ export default function HistoryPage() {
                   id="edit-date"
                   type="date"
                   value={editingExpense.expenseDate.split('T')[0]}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, expenseDate: e.target.value })}
+                  onChange={(e) => {
+                    // Convert date string to ISO datetime format
+                    const dateValue = e.target.value;
+                    const isoDateTime = dateValue ? new Date(dateValue + 'T00:00:00').toISOString() : editingExpense.expenseDate;
+                    setEditingExpense({ ...editingExpense, expenseDate: isoDateTime });
+                  }}
                   className="w-full bg-surface-input text-white text-base font-medium px-4 py-3 rounded-xl border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
                 />
               </div>

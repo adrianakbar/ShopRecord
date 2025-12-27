@@ -153,18 +153,22 @@ export async function PUT(
       );
     }
 
-    // If categoryId is provided, verify it exists and belongs to user
+    // If categoryId is provided, verify it exists
+    // Allow both user-specific and system categories (SYSTEM_USER_ID)
     if (categoryId) {
       const category = await prisma.category.findFirst({
         where: {
           id: categoryId,
-          userId: userId,
+          OR: [
+            { userId: userId },
+            { userId: '00000000-0000-0000-0000-000000000000' }, // System categories
+          ],
         },
       });
 
       if (!category) {
         return NextResponse.json(
-          { error: 'Category not found or unauthorized' },
+          { error: 'Category not found' },
           { status: 404 }
         );
       }
